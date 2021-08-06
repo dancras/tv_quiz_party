@@ -6,11 +6,10 @@ import aiohttp
 class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
-        self.session_context = aiohttp.ClientSession()
-        self.session = await self.session_context.__aenter__()
+        self.session = aiohttp.ClientSession()
 
     async def asyncTearDown(self):
-        await self.session_context.__aexit__(None, None, None)
+        await self.session.close()
 
     async def test_functionality(self):
         response = await self.session.get("http://flask_backend:5000")
