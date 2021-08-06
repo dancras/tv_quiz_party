@@ -7,3 +7,9 @@ services:
       - 8080:5000
     volumes:
       - .:/app
+  integration_tests:
+    build: ./integration_tests
+    container_name: integration_tests
+    volumes:
+      - .:/app
+    profiles: ["tests"]
