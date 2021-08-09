@@ -7,6 +7,8 @@ services:
       - 8080:5000
     volumes:
       - .:/app
+    environment:
+      - PYTHONUNBUFFERED=1
   integration_tests:
     build: ./integration_tests
     container_name: integration_tests
