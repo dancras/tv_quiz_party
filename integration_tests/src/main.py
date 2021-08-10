@@ -1,4 +1,3 @@
-import asyncio
 import unittest
 
 import aiohttp
@@ -66,7 +65,6 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             lobby_response_data = await lobby_response.json()
             self.assertEqual(response_data['join_code'], lobby_data['join_code'])
             self.assertIn(response.cookies['user_id'].value, lobby_response_data['users'])
-
 
 
 if __name__ == "__main__":
