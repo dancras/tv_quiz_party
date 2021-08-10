@@ -1,8 +1,8 @@
 import json
 import uuid
-from flask import Flask, request, g, after_this_request
+from quart import Quart, request, g, after_this_request
 
-app = Flask(__name__)
+app = Quart(__name__)
 
 lobby_index = 0
 lobbies = {}
@@ -13,7 +13,7 @@ def next_lobby_id():
     return lobby_index
 
 @app.before_request
-def manage_user_id():
+async def manage_user_id():
     user_id = None
 
     try:
@@ -34,11 +34,11 @@ def manage_user_id():
     g.user_id = user_id
 
 @app.route("/")
-def hello_world():
+async def hello_world():
     return "<p>Hello, World!</p>"
 
 @app.route('/create_lobby', methods = ['POST'])
-def create_lobby():
+async def create_lobby():
     global lobbies
 
     lobby_id = next_lobby_id()
@@ -58,9 +58,9 @@ def create_lobby():
     return r
 
 @app.route('/join_lobby', methods = ['POST'])
-def join_lobby():
+async def join_lobby():
     global lobbies
-    data = request.get_json()
+    data = await request.get_json()
     join_code = data['join_code']
 
     lobby_data = lobbies[join_code]
@@ -85,7 +85,7 @@ def join_lobby():
     return r
 
 @app.route("/lobby/<lobby_id>")
-def fetch_lobby(lobby_id):
+async def fetch_lobby(lobby_id):
     return app.response_class(
         response = json.dumps(lobbies[int(lobby_id)]),
         mimetype = 'application/json'
