@@ -29,6 +29,8 @@ def manage_user_id():
             response.set_cookie('user_id', user_id)
             return response
 
+    # https://github.com/PyCQA/pylint/issues/3793
+    # pylint: disable=assigning-non-slot
     g.user_id = user_id
 
 @app.route("/")
