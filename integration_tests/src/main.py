@@ -1,3 +1,5 @@
+import asyncio
+import json
 import unittest
 
 import aiohttp
@@ -65,6 +67,39 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             lobby_response_data = await lobby_response.json()
             self.assertEqual(response_data['join_code'], lobby_data['join_code'])
             self.assertIn(response.cookies['user_id'].value, lobby_response_data['users'])
+
+
+    async def test_join_lobby_notifies_other_user(self):
+        lobby_data = await self.set_up_lobby()
+        data = {
+            'join_code': lobby_data['join_code']
+        }
+
+        ws = await self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_data['id']))
+
+        try:
+            ws_message_future = ws.receive()
+
+            other_user_id = None
+
+            async with aiohttp.ClientSession() as other_session:
+                response = await other_session.post("http://flask_backend:5000/join_lobby", json=data)
+                self.assertEqual(response.status, 200)
+                response.close()
+
+                other_user_id = response.cookies['user_id'].value
+
+
+            ws_message = json.loads((await asyncio.wait_for(ws_message_future, timeout=3)).data)
+
+            self.assertEqual(ws_message['code'], 'USER_JOINED')
+            self.assertEqual(ws_message['data'], {
+                'user_id': other_user_id
+            })
+        except (asyncio.exceptions.TimeoutError):
+            self.fail("No websocket message received")
+        finally:
+            await ws.close()
 
 
 if __name__ == "__main__":

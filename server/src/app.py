@@ -1,11 +1,13 @@
+import asyncio
 import json
 import uuid
-from quart import Quart, request, g, after_this_request
+from quart import Quart, request, g, after_this_request, websocket
 
 app = Quart(__name__)
 
 lobby_index = 0
 lobbies = {}
+all_lobby_queues = {}
 
 def next_lobby_id():
     global lobby_index
@@ -40,6 +42,7 @@ async def hello_world():
 @app.route('/create_lobby', methods = ['POST'])
 async def create_lobby():
     global lobbies
+    global all_lobby_queues
 
     lobby_id = next_lobby_id()
     lobbies[lobby_id] = {
@@ -48,6 +51,8 @@ async def create_lobby():
         'join_code': lobby_id,
         'users': [g.user_id]
     }
+
+    all_lobby_queues[lobby_id] = []
 
     r = app.response_class(
         response = json.dumps(lobbies[lobby_id]),
@@ -59,7 +64,6 @@ async def create_lobby():
 
 @app.route('/join_lobby', methods = ['POST'])
 async def join_lobby():
-    global lobbies
     data = await request.get_json()
     join_code = data['join_code']
 
@@ -76,6 +80,10 @@ async def join_lobby():
 
     lobby_data['users'].append(g.user_id)
 
+    await broadcast(lobby_data['id'], 'USER_JOINED', {
+        'user_id': g.user_id
+    })
+
     r = app.response_class(
         response = json.dumps(lobby_data),
         status = 200,
@@ -90,6 +98,27 @@ async def fetch_lobby(lobby_id):
         response = json.dumps(lobbies[int(lobby_id)]),
         mimetype = 'application/json'
     )
+
+@app.websocket("/lobby/<lobby_id>/ws")
+async def lobby_updates(lobby_id):
+    await websocket.accept()
+
+    current_lobby_queues = all_lobby_queues[int(lobby_id)]
+    queue = asyncio.Queue()
+    current_lobby_queues.append(queue)
+
+    while True:
+        data = await queue.get()
+        await websocket.send_json(data)
+
+async def broadcast(lobby_id, code, data):
+    message = {
+        'code': code,
+        'data': data
+    }
+
+    for queue in all_lobby_queues[int(lobby_id)]:
+        await queue.put(message)
     
 
 if __name__ == "__main__":
