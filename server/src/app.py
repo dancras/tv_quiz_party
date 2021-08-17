@@ -1,7 +1,10 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
 import json
 import uuid
 from quart import Quart, request, g, after_this_request, websocket
+
+from questions import questions
 
 app = Quart(__name__)
 
@@ -80,9 +83,10 @@ async def join_lobby():
 
     lobby_data['users'].append(g.user_id)
 
-    await broadcast(lobby_data['id'], 'USER_JOINED', {
+    loop = asyncio.get_event_loop()
+    loop.create_task(broadcast(lobby_data['id'], 'USER_JOINED', {
         'user_id': g.user_id
-    })
+    }))
 
     r = app.response_class(
         response = json.dumps(lobby_data),
@@ -98,6 +102,24 @@ async def fetch_lobby(lobby_id):
         response = json.dumps(lobbies[int(lobby_id)]),
         mimetype = 'application/json'
     )
+
+@app.route("/lobby/<lobby_id>/start_round", methods = ['POST'])
+async def start_round(lobby_id):
+    global lobbies
+    lobbies[int(lobby_id)]['round'] = {
+        'questions': questions,
+        'start_time': (datetime.now(timezone.utc) + timedelta(seconds = 5)).timestamp()
+    }
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(broadcast(lobby_id, 'ROUND_STARTED', lobbies[int(lobby_id)]['round']))
+
+    return app.response_class(
+        response = {},
+        status = 200,
+        mimetype = 'application/json'
+    )
+
 
 @app.websocket("/lobby/<lobby_id>/ws")
 async def lobby_updates(lobby_id):
