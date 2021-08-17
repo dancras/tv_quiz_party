@@ -16,7 +16,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def test_functionality(self):
         response = await self.session.get("http://flask_backend:5000")
         self.assertEqual(response.status, 200)
-    
+
     async def test_create_lobby(self):
         response = await self.session.post("http://flask_backend:5000/create_lobby")
 
@@ -77,7 +77,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         }
 
         ws = await self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_data['id']))
- 
+
         other_user_id = None
 
         async with aiohttp.ClientSession() as other_session:

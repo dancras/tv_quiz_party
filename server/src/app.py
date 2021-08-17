@@ -141,7 +141,7 @@ async def broadcast(lobby_id, code, data):
 
     for queue in all_lobby_queues[int(lobby_id)]:
         await queue.put(message)
-    
+
 
 if __name__ == "__main__":
     app.run(debug = True, host = '0.0.0.0')
