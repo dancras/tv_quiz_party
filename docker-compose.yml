@@ -3,7 +3,7 @@ services:
   flask_backend:
     build: .
     container_name: flask_backend
-    command: python /app/server/src/app.py
+    command: python /app/server/src/main.py
     ports:
       - 8080:5000
     volumes:
