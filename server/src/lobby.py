@@ -103,6 +103,18 @@ async def start_round(lobby_id):
         mimetype = 'application/json'
     )
 
+@app.route("/lobby/<lobby_id>/answer_question", methods = ['POST'])
+async def answer_question(lobby_id):
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(broadcast(lobby_id, 'ANSWER_RECEIVED', {}))
+
+    return app.response_class(
+        response = {},
+        status = 200,
+        mimetype = 'application/json'
+    )
+
 
 @app.websocket("/lobby/<lobby_id>/ws")
 async def lobby_updates(lobby_id):

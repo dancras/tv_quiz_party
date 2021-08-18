@@ -5,6 +5,23 @@ import unittest
 
 import aiohttp
 
+async def at_least_one_message(ws, assert_func):
+
+    assertion_errors = []
+
+    while True:
+        try:
+            ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
+            assert_func(ws_message['code'], ws_message['data'])
+            return (ws_message['code'], ws_message['data'])
+        except AssertionError as e:
+            assertion_errors.append(e)
+        except asyncio.exceptions.TimeoutError as e:
+            if len(assertion_errors) > 0:
+                raise AssertionError(assertion_errors)
+            else:
+                raise AssertionError("No websocket message received")
+
 class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
@@ -78,8 +95,6 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         ws = await self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_data['id']))
 
-        other_user_id = None
-
         async with aiohttp.ClientSession() as other_session:
             response = await other_session.post("http://flask_backend:5000/join_lobby", json=data)
             self.assertEqual(response.status, 200)
@@ -99,36 +114,63 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         finally:
             await ws.close()
 
+
     async def test_start_round(self):
         lobby_data = await self.set_up_lobby()
         lobby_id = lobby_data['id']
 
-        ws = await self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_id))
+        async with self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_id)) as ws:
 
-        response = await self.session.post("http://flask_backend:5000/lobby/{}/start_round".format(lobby_id))
-        self.assertEqual(response.status, 200)
-        response.close()
+            async with self.session.post("http://flask_backend:5000/lobby/{}/start_round".format(lobby_id)) as response:
+                self.assertEqual(response.status, 200)
 
-        try:
-            ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
+            def assert_round_started_message(code, data):
+                self.assertEqual(code, 'ROUND_STARTED')
+                self.assertGreater(len(data['questions']), 0)
 
-            self.assertEqual(ws_message['code'], 'ROUND_STARTED')
-            self.assertGreater(len(ws_message['data']['questions']), 0)
+                time_now = datetime.now(timezone.utc)
+                start_time = datetime.fromtimestamp(data['start_time'], timezone.utc)
+                self.assertGreater(start_time, time_now)
 
-            time_now = datetime.now(timezone.utc)
-            start_time = datetime.fromtimestamp(ws_message['data']['start_time'], timezone.utc)
-            self.assertGreater(start_time, time_now)
-        except (asyncio.exceptions.TimeoutError):
-            self.fail("No websocket message received")
-        finally:
-            await ws.close()
+            _, message_data = await at_least_one_message(ws, assert_round_started_message)
 
-        response = await self.session.get("http://flask_backend:5000/lobby/{}".format(lobby_id))
-        response_data = await response.json()
+            response = await self.session.get("http://flask_backend:5000/lobby/{}".format(lobby_id))
+            response_data = await response.json()
 
-        self.assertEqual(response.status, 200)
-        self.assertEqual(response_data['round']['questions'], ws_message['data']['questions'])
-        self.assertEqual(response_data['round']['start_time'], ws_message['data']['start_time'])
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response_data['round']['questions'], message_data['questions'])
+            self.assertEqual(response_data['round']['start_time'], message_data['start_time'])
+
+
+    async def test_answer_question_updates_lobby(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+
+        async with self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_id)) as ws:
+
+            async with aiohttp.ClientSession() as other_session:
+                join_data = {
+                    'join_code': lobby_data['join_code']
+                }
+
+                async with other_session.post("http://flask_backend:5000/join_lobby", json=join_data):
+                    pass
+
+            async with self.session.post("http://flask_backend:5000/lobby/{}/start_round".format(lobby_id)):
+                pass
+
+            answer_url = "http://flask_backend:5000/lobby/{}/answer_question".format(lobby_id)
+            answer_data = {
+                'question': 1,
+                'answer': 3
+            }
+            async with self.session.post(answer_url, json=answer_data) as response:
+                self.assertEqual(response.status, 200)
+
+            def assert_message_contains_answer(code, data):
+                self.assertEqual(code, 'ANSWER_RECEIVED')
+
+            await at_least_one_message(ws, assert_message_contains_answer)
 
 
 if __name__ == "__main__":
