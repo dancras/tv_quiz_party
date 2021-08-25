@@ -6,6 +6,7 @@ from quart import request, g, websocket
 
 from app import app
 from questions import questions
+import model
 
 lobby_index = 0
 lobbies = {}
@@ -92,7 +93,7 @@ async def start_round(lobby_id):
     lobbies[int(lobby_id)]['round'] = {
         'questions': questions,
         'start_time': (datetime.now(timezone.utc) + timedelta(seconds = 5)).timestamp(),
-        'answers': dict((user_id, {}) for user_id in lobbies[int(lobby_id)]['users'])
+        'answers': model.create_answers_store(lobbies[int(lobby_id)]['users'])
     }
 
     loop = asyncio.get_event_loop()

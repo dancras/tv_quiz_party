@@ -23,3 +23,5 @@ services:
     command: /bin/sh -c "while sleep 1000; do :; done"
     volumes:
       - .:/app:cached
+    environment:
+      - PYTHONPATH=/app/server/src:$PYTHONPATH
