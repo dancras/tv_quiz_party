@@ -91,7 +91,8 @@ async def start_round(lobby_id):
     global lobbies
     lobbies[int(lobby_id)]['round'] = {
         'questions': questions,
-        'start_time': (datetime.now(timezone.utc) + timedelta(seconds = 5)).timestamp()
+        'start_time': (datetime.now(timezone.utc) + timedelta(seconds = 5)).timestamp(),
+        'answers': dict((user_id, {}) for user_id in lobbies[int(lobby_id)]['users'])
     }
 
     loop = asyncio.get_event_loop()
@@ -105,9 +106,19 @@ async def start_round(lobby_id):
 
 @app.route("/lobby/<lobby_id>/answer_question", methods = ['POST'])
 async def answer_question(lobby_id):
+    data = await request.get_json()
+    question = str(data['question'])
+    answer = str(data['answer'])
+
+    global lobbies
+    lobbies[int(lobby_id)]['round']['answers'][g.user_id][question] = answer
 
     loop = asyncio.get_event_loop()
-    loop.create_task(broadcast(lobby_id, 'ANSWER_RECEIVED', {}))
+    loop.create_task(broadcast(lobby_id, 'ANSWER_RECEIVED', {
+        'user_id': g.user_id,
+        'question': question,
+        'answer': answer
+    }))
 
     return app.response_class(
         response = {},

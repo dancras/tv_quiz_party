@@ -5,6 +5,12 @@ import unittest
 
 import aiohttp
 
+
+def cookie_value_by_name(name, cookie_jar):
+    for cookie in cookie_jar:
+        if cookie.key == name:
+            return cookie.value
+
 async def at_least_one_message(ws, assert_func):
 
     assertion_errors = []
@@ -166,11 +172,22 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             }
             async with self.session.post(answer_url, json=answer_data) as response:
                 self.assertEqual(response.status, 200)
+            
+            user_id = cookie_value_by_name('user_id', self.session.cookie_jar)
 
             def assert_message_contains_answer(code, data):
                 self.assertEqual(code, 'ANSWER_RECEIVED')
 
-            await at_least_one_message(ws, assert_message_contains_answer)
+            (_, message_data) = await at_least_one_message(ws, assert_message_contains_answer)
+            self.assertEqual(message_data['user_id'], user_id)
+            self.assertEqual(message_data['question'], '1')
+            self.assertEqual(message_data['answer'], '3')
+
+            response = await self.session.get("http://flask_backend:5000/lobby/{}".format(lobby_id))
+            response_data = await response.json()
+
+            self.assertEqual(response.status, 200)
+            self.assertEqual(response_data['round']['answers'][user_id]['1'], '3')
 
 
 if __name__ == "__main__":
