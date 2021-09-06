@@ -36,6 +36,20 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await self.session.close()
 
+    async def test_user_token_and_id_created(self):
+        response = await self.session.post("http://flask_backend:5000/handshake", json={})
+        response_data = await response.json()
+
+        self.assertIsNotNone(response.cookies['secret_token'].value)
+        self.assertIsNotNone(response_data['user_id'])
+
+    async def test_invalid_user_token_ignored(self):
+        cookies = {
+            'secret_code': 'foo'
+        }
+        response = await self.session.post("http://flask_backend:5000/handshake", json={}, cookies=cookies)
+        self.assertEqual(response.status, 200)
+
     async def test_functionality(self):
         response = await self.session.get("http://flask_backend:5000")
         self.assertEqual(response.status, 200)
