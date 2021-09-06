@@ -9,20 +9,17 @@ app = Quart(__name__)
 
 @app.before_request
 async def manage_user_id():
-    user_id = None
+    if "handshake" in request.path:
+        return
 
     try:
-        user_id = str(uuid.UUID(request.cookies.get('user_id'), version=4))
-    except (TypeError, ValueError):
-        pass
-
-    if None == user_id:
-        user_id = str(uuid.uuid4())
-
-        @after_this_request
-        def set_user_id_cookie(response):
-            response.set_cookie('user_id', user_id)
-            return response
+        (_, user_id) = auth.authenticate_user(request.cookies.get('secret_token'))
+    except (KeyError, ValueError):
+        return app.response_class(
+            response = json.dumps({}),
+            status = 403,
+            mimetype = 'application/json'
+        )
 
     # https://github.com/PyCQA/pylint/issues/3793
     # pylint: disable=assigning-non-slot
