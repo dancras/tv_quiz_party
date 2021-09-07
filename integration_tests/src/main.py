@@ -1,10 +1,32 @@
 import asyncio
 from datetime import datetime, timezone
+from functools import wraps
 import json
+import types
 import unittest
 
 import aiohttp
 
+class HandshookSessionContextManager():
+    def __init__(self, session):
+        self.session = session
+
+    async def __aenter__(self):
+        session = await self.session.__aenter__()
+        handshake_data = await handshake_session(session)
+        return (session, handshake_data['user_id'])
+
+    async def __aexit__(self, exc_type, exc, tb):
+        await self.session.__aexit__(exc_type, exc, tb)
+
+
+async def handshake_session(session):
+    async with session.post("http://flask_backend:5000/handshake", json={}) as response:
+        return await response.json()
+
+
+def create_handshook_session():
+    return HandshookSessionContextManager(aiohttp.ClientSession())
 
 def cookie_value_by_name(name, cookie_jar):
     for cookie in cookie_jar:
@@ -32,40 +54,41 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     async def asyncSetUp(self):
         self.session = aiohttp.ClientSession()
+        handshake_data = await handshake_session(self.session)
+        self.session_user_id = handshake_data['user_id']
 
     async def asyncTearDown(self):
         await self.session.close()
 
     async def test_user_token_and_id_created(self):
-        response = await self.session.post("http://flask_backend:5000/handshake", json={})
-        response_data = await response.json()
+        async with aiohttp.ClientSession() as new_session:
+            response = await new_session.post("http://flask_backend:5000/handshake", json={})
+            response_data = await response.json()
 
-        self.assertIsNotNone(response.cookies['secret_token'].value)
-        self.assertIsNotNone(response_data['user_id'])
+            self.assertIsNotNone(response.cookies['secret_token'].value)
+            self.assertIsNotNone(response_data['user_id'])
 
     async def test_invalid_user_token_ignored(self):
-        cookies = {
-            'secret_code': 'foo'
-        }
-        response = await self.session.post("http://flask_backend:5000/handshake", json={}, cookies=cookies)
-        self.assertEqual(response.status, 200)
+        async with aiohttp.ClientSession() as new_session:
+            cookies = {
+                'secret_code': 'foo'
+            }
+            async with new_session.post("http://flask_backend:5000/handshake", json={}, cookies=cookies) as response:
+                self.assertEqual(response.status, 200)
 
     async def test_authorization_fails_without_handshake(self):
-        async with self.session.get("http://flask_backend:5000") as response:
-            self.assertEqual(response.status, 403)
+        async with aiohttp.ClientSession() as new_session:
+            async with new_session.get("http://flask_backend:5000") as response:
+                self.assertEqual(response.status, 403)
 
-        async with self.session.post("http://flask_backend:5000/handshake", json={}) as _:
-            pass
+            async with new_session.post("http://flask_backend:5000/handshake", json={}) as _:
+                pass
 
-        async with self.session.get("http://flask_backend:5000") as response:
-            self.assertEqual(response.status, 200)
+            async with new_session.get("http://flask_backend:5000") as response:
+                self.assertEqual(response.status, 200)
 
 
     async def test_create_lobby(self):
-        async with self.session.post("http://flask_backend:5000/handshake", json={}) as response:
-            handshake_data = await response.json()
-            user_id = handshake_data['user_id']
-
         response = await self.session.post("http://flask_backend:5000/create_lobby")
 
         self.assertEqual(response.status, 201)
@@ -73,16 +96,13 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         response_data = await response.json()
 
         self.assertEqual(response.headers['Location'], "http://flask_backend:5000/lobby/{}".format(response_data['id']))
-        self.assertEqual(response_data['host_id'], user_id)
+        self.assertEqual(response_data['host_id'], self.session_user_id)
 
     async def set_up_lobby(self):
         response = await self.session.post("http://flask_backend:5000/create_lobby")
         return await response.json()
 
     async def test_get_lobby(self):
-        async with self.session.post("http://flask_backend:5000/handshake", json={}) as _:
-            pass
-
         lobby_data = await self.set_up_lobby()
         lobby_id = lobby_data['id']
         lobby_host_id = lobby_data['host_id']
@@ -95,9 +115,6 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response_data['host_id'], lobby_host_id)
 
     async def test_join_lobby_fails_when_already_joined(self):
-        async with self.session.post("http://flask_backend:5000/handshake", json={}) as _:
-            pass
-
         lobby_data = await self.set_up_lobby()
         data = {
             'join_code': lobby_data['join_code']
@@ -106,18 +123,12 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status, 422)
 
     async def test_join_lobby_adds_new_user(self):
-        async with self.session.post("http://flask_backend:5000/handshake", json={}) as _:
-            pass
-
         lobby_data = await self.set_up_lobby()
         data = {
             'join_code': lobby_data['join_code']
         }
-        async with aiohttp.ClientSession() as other_session:
-            async with other_session.post("http://flask_backend:5000/handshake", json={}) as response:
-                handshake_data = await response.json()
-                user_id = handshake_data['user_id']
 
+        async with create_handshook_session() as (other_session, user_id):
             response = await other_session.post("http://flask_backend:5000/join_lobby", json=data)
             self.assertEqual(response.status, 200)
 
@@ -132,9 +143,6 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
 
     async def test_join_lobby_notifies_other_user(self):
-        async with self.session.post("http://flask_backend:5000/handshake", json={}) as _:
-            pass
-
         lobby_data = await self.set_up_lobby()
         data = {
             'join_code': lobby_data['join_code']
@@ -142,11 +150,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         ws = await self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_data['id']))
 
-        async with aiohttp.ClientSession() as other_session:
-            async with other_session.post("http://flask_backend:5000/handshake", json={}) as response:
-                handshake_data = await response.json()
-                user_id = handshake_data['user_id']
-
+        async with create_handshook_session() as (other_session, user_id):
             response = await other_session.post("http://flask_backend:5000/join_lobby", json=data)
             self.assertEqual(response.status, 200)
             response.close()
@@ -167,9 +171,6 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
 
     async def test_start_round(self):
-        async with self.session.post("http://flask_backend:5000/handshake", json={}) as _:
-            pass
-
         lobby_data = await self.set_up_lobby()
         lobby_id = lobby_data['id']
 
@@ -197,16 +198,12 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
 
     async def test_answer_question_updates_lobby(self):
-        async with self.session.post("http://flask_backend:5000/handshake", json={}) as response:
-            handshake_data = await response.json()
-            user_id = handshake_data['user_id']
-
         lobby_data = await self.set_up_lobby()
         lobby_id = lobby_data['id']
 
         async with self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_id)) as ws:
 
-            async with aiohttp.ClientSession() as other_session:
+            async with create_handshook_session() as (other_session, _):
                 async with other_session.post("http://flask_backend:5000/handshake", json={}) as _:
                     pass
 
@@ -232,7 +229,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(code, 'ANSWER_RECEIVED')
 
             (_, message_data) = await at_least_one_message(ws, assert_message_contains_answer)
-            self.assertEqual(message_data['user_id'], user_id)
+            self.assertEqual(message_data['user_id'], self.session_user_id)
             self.assertEqual(message_data['question'], '1')
             self.assertEqual(message_data['answer'], '3')
 
@@ -240,7 +237,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             response_data = await response.json()
 
             self.assertEqual(response.status, 200)
-            self.assertEqual(response_data['round']['answers'][user_id]['1'], '3')
+            self.assertEqual(response_data['round']['answers'][self.session_user_id]['1'], '3')
 
 
 if __name__ == "__main__":
