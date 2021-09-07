@@ -1,54 +1,12 @@
 import asyncio
 from datetime import datetime, timezone
-from functools import wraps
 import json
-import types
 import unittest
 
 import aiohttp
 
-class HandshookSessionContextManager():
-    def __init__(self, session):
-        self.session = session
-
-    async def __aenter__(self):
-        session = await self.session.__aenter__()
-        handshake_data = await handshake_session(session)
-        return (session, handshake_data['user_id'])
-
-    async def __aexit__(self, exc_type, exc, tb):
-        await self.session.__aexit__(exc_type, exc, tb)
-
-
-async def handshake_session(session):
-    async with session.post("http://flask_backend:5000/handshake", json={}) as response:
-        return await response.json()
-
-
-def create_handshook_session():
-    return HandshookSessionContextManager(aiohttp.ClientSession())
-
-def cookie_value_by_name(name, cookie_jar):
-    for cookie in cookie_jar:
-        if cookie.key == name:
-            return cookie.value
-
-async def at_least_one_message(ws, assert_func):
-
-    assertion_errors = []
-
-    while True:
-        try:
-            ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
-            assert_func(ws_message['code'], ws_message['data'])
-            return (ws_message['code'], ws_message['data'])
-        except AssertionError as e:
-            assertion_errors.append(e)
-        except asyncio.exceptions.TimeoutError as e:
-            if len(assertion_errors) > 0:
-                raise AssertionError(assertion_errors)
-            else:
-                raise AssertionError("No websocket message received")
+from assertion_helpers import at_least_one_message
+from request_helpers import new_handshook_session, handshake_session
 
 class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
@@ -128,7 +86,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             'join_code': lobby_data['join_code']
         }
 
-        async with create_handshook_session() as (other_session, user_id):
+        async with new_handshook_session() as (other_session, user_id):
             response = await other_session.post("http://flask_backend:5000/join_lobby", json=data)
             self.assertEqual(response.status, 200)
 
@@ -148,26 +106,24 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             'join_code': lobby_data['join_code']
         }
 
-        ws = await self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_data['id']))
+        async with self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_data['id'])) as ws:
 
-        async with create_handshook_session() as (other_session, user_id):
-            response = await other_session.post("http://flask_backend:5000/join_lobby", json=data)
-            self.assertEqual(response.status, 200)
-            response.close()
+            async with new_handshook_session() as (other_session, user_id):
+                response = await other_session.post("http://flask_backend:5000/join_lobby", json=data)
+                self.assertEqual(response.status, 200)
+                response.close()
 
-            other_user_id = user_id
+                other_user_id = user_id
 
-        try:
-            ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
+            try:
+                ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
 
-            self.assertEqual(ws_message['code'], 'USER_JOINED')
-            self.assertEqual(ws_message['data'], {
-                'user_id': other_user_id
-            })
-        except (asyncio.exceptions.TimeoutError):
-            self.fail("No websocket message received")
-        finally:
-            await ws.close()
+                self.assertEqual(ws_message['code'], 'USER_JOINED')
+                self.assertEqual(ws_message['data'], {
+                    'user_id': other_user_id
+                })
+            except (asyncio.exceptions.TimeoutError):
+                self.fail("No websocket message received")
 
 
     async def test_start_round(self):
@@ -203,10 +159,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         async with self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_id)) as ws:
 
-            async with create_handshook_session() as (other_session, _):
-                async with other_session.post("http://flask_backend:5000/handshake", json={}) as _:
-                    pass
-
+            async with new_handshook_session() as (other_session, user_id):
                 join_data = {
                     'join_code': lobby_data['join_code']
                 }
