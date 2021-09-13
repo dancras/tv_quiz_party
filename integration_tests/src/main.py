@@ -57,8 +57,8 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response_data['host_id'], self.session_user_id)
 
     async def set_up_lobby(self):
-        response = await self.session.post("http://flask_backend:5000/create_lobby")
-        return await response.json()
+        async with self.session.post("http://flask_backend:5000/create_lobby") as response:
+            return await response.json()
 
     async def test_get_lobby(self):
         lobby_data = await self.set_up_lobby()
@@ -109,21 +109,19 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
         async with self.session.ws_connect("ws://flask_backend:5000/lobby/{}/ws".format(lobby_data['id'])) as ws:
 
             async with new_handshook_session() as (other_session, user_id):
-                response = await other_session.post("http://flask_backend:5000/join_lobby", json=data)
-                self.assertEqual(response.status, 200)
-                response.close()
 
-                other_user_id = user_id
+                async with other_session.post("http://flask_backend:5000/join_lobby", json=data) as response:
+                    self.assertEqual(response.status, 200)
 
-            try:
-                ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
+                try:
+                    ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
 
-                self.assertEqual(ws_message['code'], 'USER_JOINED')
-                self.assertEqual(ws_message['data'], {
-                    'user_id': other_user_id
-                })
-            except (asyncio.exceptions.TimeoutError):
-                self.fail("No websocket message received")
+                    self.assertEqual(ws_message['code'], 'USER_JOINED')
+                    self.assertEqual(ws_message['data'], {
+                        'user_id': user_id
+                    })
+                except (asyncio.exceptions.TimeoutError):
+                    self.fail("No websocket message received")
 
 
     async def test_start_round(self):

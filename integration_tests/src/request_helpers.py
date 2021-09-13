@@ -14,7 +14,8 @@ class HandshookSessionContextManager():
 
 
 async def handshake_session(session):
-    async with session.post("http://flask_backend:5000/handshake", json={}) as response:
+    headers = {"Connection": "close"}
+    async with session.post("http://flask_backend:5000/handshake", json={}, headers=headers) as response:
         return await response.json()
 
 

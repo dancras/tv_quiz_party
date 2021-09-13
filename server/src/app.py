@@ -46,5 +46,5 @@ async def handshake():
 
     if None != new_secret_token:
         response.set_cookie('secret_token', new_secret_token)
-    
+
     return response
