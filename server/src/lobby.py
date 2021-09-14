@@ -1,12 +1,14 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
-import json
 
 from quart import request, g, websocket
 
 from app import app
 from questions import questions
 import model
+from response_helpers import error_response, linked_resource_response, json_response
+
+LOBBY_URL = "{}lobby/{}"
 
 lobby_index = 0
 lobbies = {}
@@ -41,13 +43,7 @@ async def create_lobby():
 
     all_lobby_queues[lobby_id] = []
 
-    r = app.response_class(
-        response = json.dumps(lobbies[lobby_id]),
-        status = 201,
-        mimetype = 'application/json'
-    )
-    r.headers['Location'] = "{}lobby/{}".format(request.root_url, lobby_id)
-    return r
+    return linked_resource_response(LOBBY_URL, 201, lobby_id, lobbies[lobby_id])
 
 @app.route('/join_lobby', methods = ['POST'])
 async def join_lobby():
@@ -57,13 +53,7 @@ async def join_lobby():
     lobby_data = lobbies[join_code]
 
     if g.user_id in lobby_data['users']:
-        return app.response_class(
-            response = json.dumps({
-                'message': "User already in lobby"
-            }),
-            status = 422,
-            mimetype = 'application/json'
-        )
+        return error_response(422, "User already in lobby")
 
     lobby_data['users'].append(g.user_id)
 
@@ -72,20 +62,12 @@ async def join_lobby():
         'user_id': g.user_id
     }))
 
-    r = app.response_class(
-        response = json.dumps(lobby_data),
-        status = 200,
-        mimetype = 'application/json'
-    )
-    r.headers['Location'] = "{}lobby/{}".format(request.root_url, lobby_data['id'])
-    return r
+    return linked_resource_response(LOBBY_URL, 200, lobby_data['id'], lobby_data)
+
 
 @app.route("/lobby/<lobby_id>")
 async def fetch_lobby(lobby_id):
-    return app.response_class(
-        response = json.dumps(lobbies[int(lobby_id)]),
-        mimetype = 'application/json'
-    )
+    return json_response(lobbies[int(lobby_id)])
 
 @app.route("/lobby/<lobby_id>/start_round", methods = ['POST'])
 async def start_round(lobby_id):
@@ -99,11 +81,7 @@ async def start_round(lobby_id):
     loop = asyncio.get_event_loop()
     loop.create_task(broadcast(lobby_id, 'ROUND_STARTED', lobbies[int(lobby_id)]['round']))
 
-    return app.response_class(
-        response = {},
-        status = 200,
-        mimetype = 'application/json'
-    )
+    return json_response({})
 
 @app.route("/lobby/<lobby_id>/answer_question", methods = ['POST'])
 async def answer_question(lobby_id):
@@ -121,11 +99,7 @@ async def answer_question(lobby_id):
         'answer': answer
     }))
 
-    return app.response_class(
-        response = {},
-        status = 200,
-        mimetype = 'application/json'
-    )
+    return json_response({})
 
 
 @app.websocket("/lobby/<lobby_id>/ws")

@@ -1,4 +1,5 @@
 from app import app
+import handshake
 import lobby
 
 if __name__ == "__main__":
