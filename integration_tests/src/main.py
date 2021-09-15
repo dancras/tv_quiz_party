@@ -208,9 +208,16 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             async with self.session.post(LOBBY_START_ROUND_URL.format(lobby_id)):
                 pass
 
+            data = {
+                'question_index': 0
+            }
+
+            async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=data) as response:
+                self.assertEqual(response.status, 200)
+
             answer_url = LOBBY_ANSWER_QUESTION_URL.format(lobby_id)
             answer_data = {
-                'question': 1,
+                'question_index': 0,
                 'answer': 3
             }
             async with self.session.post(answer_url, json=answer_data) as response:
@@ -221,15 +228,37 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
             (_, message_data) = await at_least_one_message(ws, assert_message_contains_answer)
             self.assertEqual(message_data['user_id'], self.session_user_id)
-            self.assertEqual(message_data['question'], '1')
+            self.assertEqual(message_data['question_index'], 0)
             self.assertEqual(message_data['answer'], '3')
 
             response = await self.session.get(LOBBY_URL.format(lobby_id))
             response_data = await response.json()
 
             self.assertEqual(response.status, 200)
-            self.assertEqual(response_data['round']['answers'][self.session_user_id]['1'], '3')
+            self.assertEqual(response_data['round']['answers'][self.session_user_id]['0'], '3')
 
+
+    async def test_answer_question_fails_for_inactive_question(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+
+        async with self.session.post(LOBBY_START_ROUND_URL.format(lobby_id)) as response:
+            pass
+
+        data = {
+            'question_index': 0
+        }
+
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=data) as response:
+            self.assertEqual(response.status, 200)
+
+        answer_url = LOBBY_ANSWER_QUESTION_URL.format(lobby_id)
+        answer_data = {
+            'question_index': 1,
+            'answer': 3
+        }
+        async with self.session.post(answer_url, json=answer_data) as response:
+            self.assertEqual(response.status, 422)
 
 if __name__ == "__main__":
     unittest.main()

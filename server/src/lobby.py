@@ -101,16 +101,23 @@ async def start_question(lobby_id):
 @app.route("/lobby/<lobby_id>/answer_question", methods = ['POST'])
 async def answer_question(lobby_id):
     data = await request.get_json()
-    question = str(data['question'])
+    question_index = int(data['question_index'])
     answer = str(data['answer'])
 
-    global lobbies
-    lobbies[int(lobby_id)]['round']['answers'][g.user_id][question] = answer
+    try:
+        current_question_index = None
+        current_question_index = lobbies[int(lobby_id)]['round']['current_question']['i']
+        assert current_question_index == question_index
+    except (KeyError, AssertionError):
+        message = 'Tried to answer question {}. Current question is {}'.format(question_index, current_question_index)
+        return error_response(422, message)
+
+    lobbies[int(lobby_id)]['round']['answers'][g.user_id][question_index] = answer
 
     loop = asyncio.get_event_loop()
     loop.create_task(broadcast(lobby_id, 'ANSWER_RECEIVED', {
         'user_id': g.user_id,
-        'question': question,
+        'question_index': question_index,
         'answer': answer
     }))
 
