@@ -90,6 +90,7 @@ async def start_question(lobby_id):
     lobbies[int(lobby_id)]['round']['current_question'] = {
         'i': int(data['question_index']),
         'start_time': (datetime.now(timezone.utc) + timedelta(seconds = 5)).timestamp(),
+        'has_ended': False
     }
 
     loop = asyncio.get_event_loop()
@@ -108,6 +109,7 @@ async def answer_question(lobby_id):
         current_question_index = None
         current_question_index = lobbies[int(lobby_id)]['round']['current_question']['i']
         assert current_question_index == question_index
+        assert not lobbies[int(lobby_id)]['round']['current_question']['has_ended']
     except (KeyError, AssertionError):
         message = 'Tried to answer question {}. Current question is {}'.format(question_index, current_question_index)
         return error_response(422, message)
@@ -120,6 +122,23 @@ async def answer_question(lobby_id):
         'question_index': question_index,
         'answer': answer
     }))
+
+    return json_response({})
+
+
+@app.route("/lobby/<lobby_id>/end_question", methods = ['POST'])
+async def end_question(lobby_id):
+    data = await request.get_json()
+    question_index = int(data['question_index'])
+
+    try:
+        current_question_index = lobbies[int(lobby_id)]['round']['current_question']['i']
+        assert current_question_index == question_index
+        assert not lobbies[int(lobby_id)]['round']['current_question']['has_ended']
+    except (KeyError, AssertionError):
+         return error_response(422, "Tried to end non-active or ended question")
+
+    lobbies[int(lobby_id)]['round']['current_question']['has_ended'] = True
 
     return json_response({})
 

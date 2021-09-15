@@ -16,6 +16,7 @@ LOBBY_URL = "{}/lobby/{{}}".format(BASE_URL)
 LOBBY_WS_URL = "{}/ws".format(LOBBY_URL).replace("http:", "ws:")
 LOBBY_START_ROUND_URL = "{}/start_round".format(LOBBY_URL)
 LOBBY_START_QUESTION_URL = "{}/start_question".format(LOBBY_URL)
+LOBBY_END_QUESTION_URL = "{}/end_question".format(LOBBY_URL)
 LOBBY_ANSWER_QUESTION_URL = "{}/answer_question".format(LOBBY_URL)
 
 
@@ -258,6 +259,59 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             'answer': 3
         }
         async with self.session.post(answer_url, json=answer_data) as response:
+            self.assertEqual(response.status, 422)
+
+
+    async def test_answer_question_fails_after_host_ends_question(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+
+        async with self.session.post(LOBBY_START_ROUND_URL.format(lobby_id)) as response:
+            pass
+
+        data = {
+            'question_index': 0
+        }
+
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=data) as response:
+            self.assertEqual(response.status, 200)
+
+        async with self.session.post(LOBBY_END_QUESTION_URL.format(lobby_id), json=data) as response:
+            self.assertEqual(response.status, 200)
+
+        answer_data = {
+            'question_index': 0,
+            'answer': 3
+        }
+        async with self.session.post(LOBBY_ANSWER_QUESTION_URL.format(lobby_id), json=answer_data) as response:
+            self.assertEqual(response.status, 422)
+
+
+    async def test_host_can_only_end_current_question_and_only_once(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+
+        async with self.session.post(LOBBY_START_ROUND_URL.format(lobby_id)) as response:
+            pass
+
+        data = {
+            'question_index': 0
+        }
+
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=data) as response:
+            self.assertEqual(response.status, 200)
+
+        invalid_data = {
+            'question_index': 1
+        }
+
+        async with self.session.post(LOBBY_END_QUESTION_URL.format(lobby_id), json=invalid_data) as response:
+            self.assertEqual(response.status, 422)
+
+        async with self.session.post(LOBBY_END_QUESTION_URL.format(lobby_id), json=data) as response:
+            pass
+
+        async with self.session.post(LOBBY_END_QUESTION_URL.format(lobby_id), json=data) as response:
             self.assertEqual(response.status, 422)
 
 if __name__ == "__main__":
