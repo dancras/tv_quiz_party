@@ -120,7 +120,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_data['id'])) as ws:
 
-            async with new_handshook_session() as (other_session, user_id):
+            async with new_handshook_session() as (other_session, other_user_id):
 
                 async with other_session.post(JOIN_LOBBY_URL, json=data) as response:
                     self.assertEqual(response.status, 200)
@@ -129,9 +129,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                     ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
 
                     self.assertEqual(ws_message['code'], 'USER_JOINED')
-                    self.assertEqual(ws_message['data'], {
-                        'user_id': user_id
-                    })
+                    self.assertEqual(ws_message['data']['user_id'], other_user_id)
                 except (asyncio.exceptions.TimeoutError):
                     self.fail("No websocket message received")
 
@@ -148,6 +146,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             def assert_round_started_message(code, data):
                 self.assertEqual(code, 'ROUND_STARTED')
                 self.assertGreater(len(data['questions']), 0)
+                self.assertEqual(data['leaderboard'][self.session_user_id]['score'], 0)
 
             _, message_data = await at_least_one_message(ws, assert_round_started_message)
 
@@ -156,6 +155,7 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
             self.assertEqual(response.status, 200)
             self.assertEqual(response_data['round']['questions'], message_data['questions'])
+            self.assertEqual(response_data['round']['leaderboard'][self.session_user_id]['score'], 0)
 
 
     async def test_start_question(self):
@@ -313,6 +313,38 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         async with self.session.post(LOBBY_END_QUESTION_URL.format(lobby_id), json=data) as response:
             self.assertEqual(response.status, 422)
+
+
+    async def test_leaderboard_players_are_maintained(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+
+        async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_id)) as ws:
+
+            async with self.session.post(LOBBY_START_ROUND_URL.format(lobby_id)) as response:
+                self.assertEqual(response.status, 200)
+
+            async with new_handshook_session() as (other_session, other_user_id):
+
+                join_request_data = {
+                    'join_code': lobby_data['join_code']
+                }
+
+                async with other_session.post(JOIN_LOBBY_URL, json=join_request_data) as response:
+                    pass
+
+                def assert_user_joined_and_added_to_leaderboard(code, data):
+                    self.assertEqual(code, 'USER_JOINED')
+                    self.assertEqual(data['lobby']['round']['leaderboard'][other_user_id]['score'], 0)
+
+                await at_least_one_message(ws, assert_user_joined_and_added_to_leaderboard)
+
+                response = await self.session.get(LOBBY_URL.format(lobby_id))
+                response_data = await response.json()
+
+                self.assertEqual(response.status, 200)
+                self.assertEqual(response_data['round']['leaderboard'][other_user_id]['score'], 0)
+
 
 if __name__ == "__main__":
     unittest.main()

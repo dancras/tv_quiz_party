@@ -55,11 +55,12 @@ async def join_lobby():
     if g.user_id in lobby_data['users']:
         return error_response(422, "User already in lobby")
 
-    lobby_data['users'].append(g.user_id)
+    model.add_user_to_lobby(g.user_id, lobby_data)
 
     loop = asyncio.get_event_loop()
     loop.create_task(broadcast(lobby_data['id'], 'USER_JOINED', {
-        'user_id': g.user_id
+        'user_id': g.user_id,
+        'lobby': lobby_data
     }))
 
     return linked_resource_response(LOBBY_URL, 200, lobby_data['id'], lobby_data)
@@ -74,7 +75,8 @@ async def start_round(lobby_id):
     global lobbies
     lobbies[int(lobby_id)]['round'] = {
         'questions': questions,
-        'answers': model.create_answers_store(lobbies[int(lobby_id)]['users'])
+        'answers': model.create_answers_store(lobbies[int(lobby_id)]['users']),
+        'leaderboard': model.create_leaderboard_store(lobbies[int(lobby_id)]['users']),
     }
 
     loop = asyncio.get_event_loop()
