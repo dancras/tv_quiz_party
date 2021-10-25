@@ -345,6 +345,58 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.status, 200)
                 self.assertEqual(response_data['round']['leaderboard'][other_user_id]['score'], 0)
 
+    async def test_websocket_connection_after_reconnect(self):
+        lobby_data = await self.set_up_lobby()
+        data = {
+            'join_code': lobby_data['join_code']
+        }
+
+        async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_data['id'])) as ws:
+            pass
+
+        async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_data['id'])) as ws:
+            async with new_handshook_session() as (other_session, other_user_id):
+
+                async with other_session.post(JOIN_LOBBY_URL, json=data) as response:
+                    self.assertEqual(response.status, 200)
+
+                try:
+                    ws_message = json.loads((await asyncio.wait_for(ws.receive(), timeout=3)).data)
+
+                    self.assertEqual(ws_message['code'], 'USER_JOINED')
+                    self.assertEqual(ws_message['data']['user_id'], other_user_id)
+                except (asyncio.exceptions.TimeoutError):
+                    self.fail("No websocket message received")
+
+
+    async def test_opening_second_websocket_closes_first(self):
+        lobby_data = await self.set_up_lobby()
+        data = {
+            'join_code': lobby_data['join_code']
+        }
+
+        async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_data['id'])) as ws1:
+
+            async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_data['id'])) as ws2:
+                async with new_handshook_session() as (other_session, other_user_id):
+
+                    async with other_session.post(JOIN_LOBBY_URL, json=data) as response:
+                        self.assertEqual(response.status, 200)
+
+                    try:
+                        ws_message = json.loads((await asyncio.wait_for(ws2.receive(), timeout=3)).data)
+
+                        self.assertEqual(ws_message['code'], 'USER_JOINED')
+                        self.assertEqual(ws_message['data']['user_id'], other_user_id)
+                    except (asyncio.exceptions.TimeoutError):
+                        self.fail("No websocket message received")
+
+            def assert_websocket_replaced(code, data):
+                self.assertEqual(code, 'SOCKET_REPLACED')
+
+            await at_least_one_message(ws1, assert_websocket_replaced)
+
+
 
 if __name__ == "__main__":
     unittest.main()

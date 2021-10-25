@@ -25,7 +25,7 @@ async def broadcast(lobby_id, code, data):
         'data': data
     }
 
-    for queue in all_lobby_queues[int(lobby_id)]:
+    for queue in all_lobby_queues[int(lobby_id)].values():
         await queue.put(message)
 
 @app.route('/create_lobby', methods = ['POST'])
@@ -41,7 +41,7 @@ async def create_lobby():
         'users': [g.user_id]
     }
 
-    all_lobby_queues[lobby_id] = []
+    all_lobby_queues[lobby_id] = {}
 
     return linked_resource_response(LOBBY_URL, 201, lobby_id, lobbies[lobby_id])
 
@@ -147,13 +147,30 @@ async def end_question(lobby_id):
 
 @app.websocket("/lobby/<lobby_id>/ws")
 async def lobby_updates(lobby_id):
-    await websocket.accept()
+    try:
+        await websocket.accept()
 
-    current_lobby_queues = all_lobby_queues[int(lobby_id)]
-    queue = asyncio.Queue()
-    current_lobby_queues.append(queue)
+        current_lobby_queues = all_lobby_queues[int(lobby_id)]
 
-    while True:
-        data = await queue.get()
-        await websocket.send_json(data)
+        try:
+            existing_user_queue = current_lobby_queues[g.user_id]
+            await existing_user_queue.put({
+                'code': 'SOCKET_REPLACED',
+                'data': {}
+            })
+        except KeyError:
+            pass
 
+        queue = asyncio.Queue()
+        current_lobby_queues[g.user_id] = queue
+
+        while True:
+            data = await queue.get()
+            await websocket.send_json(data)
+
+            if data['code'] == 'SOCKET_REPLACED':
+                break
+
+    except asyncio.CancelledError:
+        current_lobby_queues = all_lobby_queues[int(lobby_id)]
+        current_lobby_queues.pop(g.user_id)

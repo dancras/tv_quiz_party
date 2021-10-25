@@ -1,18 +1,28 @@
 import json
 
-from quart import request, g
+from quart import request, websocket, g
 
 from app import app
 import auth
 from response_helpers import error_response
+
+
+@app.before_websocket
+async def ws_manage_user_id():
+    return add_authenticated_user_to_global_context(websocket)
+
 
 @app.before_request
 async def manage_user_id():
     if "handshake" in request.path:
         return
 
+    return add_authenticated_user_to_global_context(request)
+
+
+def add_authenticated_user_to_global_context(context):
     try:
-        (_, user_id) = auth.authenticate_user(request.cookies.get('secret_token'))
+        (_, user_id) = auth.authenticate_user(context.cookies.get('secret_token'))
     except (KeyError, ValueError):
         return error_response(403, "Handshake before using API")
 
@@ -36,7 +46,7 @@ async def handshake():
         mimetype = 'application/json'
     )
 
-    if None != new_secret_token:
+    if new_secret_token is not None:
         response.set_cookie('secret_token', new_secret_token)
 
     return response
