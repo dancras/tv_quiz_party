@@ -142,6 +142,18 @@ async def end_question(lobby_id):
 
     lobbies[int(lobby_id)]['round']['current_question']['has_ended'] = True
 
+    for user_id in lobbies[int(lobby_id)]['users']:
+        user_answer = lobbies[int(lobby_id)]['round']['answers'][user_id].get(question_index)
+        correct_answer = lobbies[int(lobby_id)]['round']['questions'][question_index]['correct_answer']
+
+        if user_answer == correct_answer:
+            lobbies[int(lobby_id)]['round']['leaderboard'][user_id]['score'] += 1
+
+    model.update_leaderboard_positions(lobbies[int(lobby_id)]['round']['leaderboard'])
+
+    loop = asyncio.get_event_loop()
+    loop.create_task(broadcast(lobby_id, 'LEADERBOARD_UPDATED', lobbies[int(lobby_id)]['round']['leaderboard']))
+
     return json_response({})
 
 

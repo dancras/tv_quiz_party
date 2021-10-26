@@ -345,6 +345,70 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(response.status, 200)
                 self.assertEqual(response_data['round']['leaderboard'][other_user_id]['score'], 0)
 
+    async def test_end_question_updates_scores_and_positions(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+
+        async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_id)) as ws:
+
+            async with new_handshook_session() as (other_session, other_user_id):
+                join_data = {
+                    'join_code': lobby_data['join_code']
+                }
+
+                async with other_session.post(JOIN_LOBBY_URL, json=join_data):
+                    pass
+
+                async with self.session.post(LOBBY_START_ROUND_URL.format(lobby_id)):
+                    pass
+
+                def assert_leaderboard_correct_at_start(code, data):
+                    self.assertEqual(code, 'ROUND_STARTED')
+                    self.assertEqual(data['leaderboard'][self.session_user_id]['score'], 0)
+                    self.assertEqual(data['leaderboard'][self.session_user_id]['position'], 1)
+                    self.assertEqual(data['leaderboard'][other_user_id]['score'], 0)
+                    self.assertEqual(data['leaderboard'][other_user_id]['position'], 1)
+
+                (_, message_data) = await at_least_one_message(ws, assert_leaderboard_correct_at_start)
+
+                question_index_data = {
+                    'question_index': 0
+                }
+
+                async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=question_index_data) as response:
+                    self.assertEqual(response.status, 200)
+
+                correct_answer_data = {
+                    'question_index': 0,
+                    'answer': message_data['questions'][0]['correct_answer']
+                }
+
+                wrong_answer_data = {
+                    'question_index': 0,
+                    'answer': 'foo'
+                }
+
+                answer_url = LOBBY_ANSWER_QUESTION_URL.format(lobby_id)
+
+                async with self.session.post(answer_url, json=wrong_answer_data) as response:
+                    pass
+
+                async with other_session.post(answer_url, json=correct_answer_data) as response:
+                    pass
+
+                async with self.session.post(LOBBY_END_QUESTION_URL.format(lobby_id), json=question_index_data) as response:
+                    pass
+
+                def assert_leaderboard_updated_correctly(code, data):
+                    self.assertEqual(code, 'LEADERBOARD_UPDATED')
+                    self.assertEqual(data[self.session_user_id]['score'], 0)
+                    self.assertEqual(data[self.session_user_id]['position'], 2)
+                    self.assertEqual(data[other_user_id]['score'], 1)
+                    self.assertEqual(data[other_user_id]['position'], 1)
+
+                await at_least_one_message(ws, assert_leaderboard_updated_correctly)
+
+
     async def test_websocket_connection_after_reconnect(self):
         lobby_data = await self.set_up_lobby()
         data = {

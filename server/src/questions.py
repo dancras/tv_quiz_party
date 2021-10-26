@@ -8,7 +8,7 @@ questions = [
   , 'answer_text_1': "Theophilus Wildebeest"
   , 'answer_text_2': "Rab Nesbitt"
   , 'answer_text_3': "Homer Simpson"
-  , 'correct_answer': 2
+  , 'correct_answer': '2'
   },
   { 'video_id': 'SJDUL21X1uo'
   , 'start_time': 386.0
@@ -19,7 +19,7 @@ questions = [
   , 'answer_text_1': "AA Milne"
   , 'answer_text_2': "TS Eliot"
   , 'answer_text_3': "WH Auden"
-  , 'correct_answer': 3
+  , 'correct_answer': '3'
   },
   { 'video_id': 'y_-PZRWaeuU'
   , 'start_time': 332.0
@@ -30,6 +30,6 @@ questions = [
   , 'answer_text_1': "Lancashire"
   , 'answer_text_2': "Cumbria"
   , 'answer_text_3': "North Yorkshire"
-  , 'correct_answer': 3
+  , 'correct_answer': '3'
   }
 ]
