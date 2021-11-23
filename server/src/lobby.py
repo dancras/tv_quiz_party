@@ -132,27 +132,34 @@ async def answer_question(lobby_id):
 async def end_question(lobby_id):
     data = await request.get_json()
     question_index = int(data['question_index'])
+    lobby = lobbies[int(lobby_id)]
+    round = lobby['round']
 
     try:
-        current_question_index = lobbies[int(lobby_id)]['round']['current_question']['i']
+        current_question_index = round['current_question']['i']
         assert current_question_index == question_index
-        assert not lobbies[int(lobby_id)]['round']['current_question']['has_ended']
+        assert not round['current_question']['has_ended']
     except (KeyError, AssertionError):
          return error_response(422, "Tried to end non-active or ended question")
 
-    lobbies[int(lobby_id)]['round']['current_question']['has_ended'] = True
+    round['current_question']['has_ended'] = True
 
-    for user_id in lobbies[int(lobby_id)]['users']:
-        user_answer = lobbies[int(lobby_id)]['round']['answers'][user_id].get(question_index)
-        correct_answer = lobbies[int(lobby_id)]['round']['questions'][question_index]['correct_answer']
+    for user_id in lobby['users']:
+        user_answer = round['answers'][user_id].get(question_index)
+        correct_answer = round['questions'][question_index]['correct_answer']
 
         if user_answer == correct_answer:
-            lobbies[int(lobby_id)]['round']['leaderboard'][user_id]['score'] += 1
+            round['leaderboard'][user_id]['score'] += 1
 
-    model.update_leaderboard_positions(lobbies[int(lobby_id)]['round']['leaderboard'])
+    model.update_leaderboard_positions(round['leaderboard'])
 
     loop = asyncio.get_event_loop()
-    loop.create_task(broadcast(lobby_id, 'LEADERBOARD_UPDATED', lobbies[int(lobby_id)]['round']['leaderboard']))
+    loop.create_task(broadcast(lobby_id, 'LEADERBOARD_UPDATED', round['leaderboard']))
+
+    if len(round['questions']) == current_question_index + 1:
+        lobby['previous_round'] = round
+        lobby['round'] = None
+        loop.create_task(broadcast(lobby_id, 'ROUND_ENDED', round))
 
     return json_response({})
 

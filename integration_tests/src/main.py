@@ -30,6 +30,10 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
     async def asyncTearDown(self):
         await self.session.close()
 
+    async def set_up_lobby(self):
+        async with self.session.post(CREATE_LOBBY_URL) as response:
+            return await response.json()
+
     async def test_user_token_and_id_created(self):
         async with aiohttp.ClientSession() as new_session:
             response = await new_session.post(HANDSHAKE_URL, json={})
@@ -67,10 +71,6 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.headers['Location'], LOBBY_URL.format(response_data['id']))
         self.assertEqual(response_data['host_id'], self.session_user_id)
-
-    async def set_up_lobby(self):
-        async with self.session.post(CREATE_LOBBY_URL) as response:
-            return await response.json()
 
     async def test_get_lobby(self):
         lobby_data = await self.set_up_lobby()
@@ -407,6 +407,42 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(data[other_user_id]['position'], 1)
 
                 await at_least_one_message(ws, assert_leaderboard_updated_correctly)
+
+    async def test_end_question_ends_round_after_final_question(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+
+        async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_id)) as ws:
+
+            async with self.session.post(LOBBY_START_ROUND_URL.format(lobby_id)):
+                pass
+
+            def assert_round_started_message(code, data):
+                self.assertEqual(code, 'ROUND_STARTED')
+
+            _, message_data = await at_least_one_message(ws, assert_round_started_message)
+
+            for i in range(len(message_data['questions'])):
+                question_index_data = {
+                    'question_index': i
+                }
+
+                async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=question_index_data) as response:
+                    pass
+
+                async with self.session.post(LOBBY_END_QUESTION_URL.format(lobby_id), json=question_index_data) as response:
+                    pass
+
+            def assert_round_ended_message(code, _):
+                self.assertEqual(code, 'ROUND_ENDED')
+
+            await at_least_one_message(ws, assert_round_ended_message)
+
+            response = await self.session.get(LOBBY_URL.format(lobby_id))
+            response_data = await response.json()
+
+            self.assertIsNone(response_data['round'])
+            self.assertEqual(response_data['previous_round']['leaderboard'][self.session_user_id]['score'], 0)
 
 
     async def test_websocket_connection_after_reconnect(self):
