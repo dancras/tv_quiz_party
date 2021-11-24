@@ -88,9 +88,23 @@ async def start_round(lobby_id):
 async def start_question(lobby_id):
     global lobbies
     data = await request.get_json()
+    requested_question_index = int(data['question_index'])
+    current_question = lobbies[int(lobby_id)]['round'].get('current_question')
+
+    try:
+        message = 'first question must start with question_index 0'
+        assert current_question is not None or requested_question_index == 0
+
+        message = 'question_index must be the next in the sequence'
+        assert current_question is None or requested_question_index == current_question['i'] + 1
+
+        message = 'current question has not ended'
+        assert current_question is None or current_question['has_ended']
+    except AssertionError:
+        return error_response(422, message)
 
     lobbies[int(lobby_id)]['round']['current_question'] = {
-        'i': int(data['question_index']),
+        'i': requested_question_index,
         'start_time': (datetime.now(timezone.utc) + timedelta(seconds = 5)).timestamp(),
         'has_ended': False
     }

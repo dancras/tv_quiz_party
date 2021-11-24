@@ -192,6 +192,48 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(response_data['round']['current_question']['start_time'], message_data['start_time'])
 
 
+    async def test_start_question_fail_cases(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+
+        async with self.session.post(LOBBY_START_ROUND_URL.format(lobby_id)) as response:
+            pass
+
+        def request_for_question(i):
+            return {
+                'question_index': i
+            }
+
+        # Must start with question 0
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=request_for_question(1)) as response:
+            self.assertEqual(response.status, 422)
+
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=request_for_question(0)) as response:
+            pass
+
+        # Cannot start the same question twice
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=request_for_question(0)) as response:
+            self.assertEqual(response.status, 422)
+
+        # Cannot start next without ending current
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=request_for_question(1)) as response:
+            self.assertEqual(response.status, 422)
+
+        async with self.session.post(LOBBY_END_QUESTION_URL.format(lobby_id), json=request_for_question(0)) as response:
+            pass
+
+        # Must start questions in sequence
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=request_for_question(2)) as response:
+            self.assertEqual(response.status, 422)
+
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=request_for_question(1)) as response:
+            pass
+
+        # Cannot start previous question
+        async with self.session.post(LOBBY_START_QUESTION_URL.format(lobby_id), json=request_for_question(0)) as response:
+            self.assertEqual(response.status, 422)
+
+
     async def test_answer_question_updates_lobby(self):
         lobby_data = await self.set_up_lobby()
         lobby_id = lobby_data['id']
