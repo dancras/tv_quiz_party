@@ -19,6 +19,12 @@ def next_lobby_id():
     lobby_index += 1
     return lobby_index
 
+def get_user_lobby(user_id):
+    for lobby_id in lobbies:
+        lobby = lobbies[lobby_id]
+        if user_id in lobby['users']:
+            return lobby
+
 async def broadcast(lobby_id, code, data):
     message = {
         'code': code,

@@ -134,6 +134,11 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                     self.fail("No websocket message received")
 
 
+    async def test_handshake_data_includes_active_lobby_data(self):
+        lobby_data = await self.set_up_lobby()
+        handshake_data = await handshake_session(self.session)
+        self.assertEqual(handshake_data['active_lobby']['id'], lobby_data['id'])
+
     async def test_start_round(self):
         lobby_data = await self.set_up_lobby()
         lobby_id = lobby_data['id']

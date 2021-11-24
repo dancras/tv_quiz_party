@@ -4,6 +4,7 @@ from quart import request, websocket, g
 
 from app import app
 import auth
+from lobby import get_user_lobby
 from response_helpers import error_response
 
 
@@ -35,12 +36,14 @@ def add_authenticated_user_to_global_context(context):
 async def handshake():
     try:
         (_, user_id) = auth.authenticate_user(request.cookies.get('secret_token'))
+        new_secret_token = None
     except (KeyError, ValueError):
         (new_secret_token, user_id) = auth.create_new_user()
 
     response = app.response_class(
         response = json.dumps({
-            'user_id': user_id
+            'user_id': user_id,
+            'active_lobby': get_user_lobby(user_id)
         }),
         status = 200,
         mimetype = 'application/json'
