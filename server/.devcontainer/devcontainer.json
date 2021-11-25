@@ -1,10 +1,10 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/tree/v0.177.0/containers/python-3
 {
-	"name": "Dev Tooling",
+	"name": "Server Tooling",
 
-	"dockerComposeFile": "../docker-compose.yml",
-	"service": "dev_tooling",
+	"dockerComposeFile": "../../docker-compose.yml",
+	"service": "server_tooling",
 	"workspaceFolder": "/app",
 
 	// Set *default* container specific settings.json values on container create.

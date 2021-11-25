@@ -17,11 +17,17 @@ services:
     volumes:
       - .:/app
     profiles: ["tests"]
-  dev_tooling:
+  server_tooling:
     build: .
-    container_name: dev_tooling
+    container_name: server_tooling
     command: /bin/sh -c "while sleep 1000; do :; done"
     volumes:
       - .:/app:cached
     environment:
       - PYTHONPATH=/app/server/src:$PYTHONPATH
+  client_tooling:
+    build: client
+    container_name: client_tooling
+    command: /bin/sh -c "while sleep 1000; do :; done"
+    volumes:
+      - .:/app:cached
