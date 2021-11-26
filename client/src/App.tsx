@@ -1,15 +1,31 @@
-import React from 'react';
+import React, { Suspense } from 'react';
+import { Subscribe } from '@react-rxjs/core'
+import { ErrorBoundary } from 'react-error-boundary'
 import logo from './logo.svg';
 import './App.css';
 
-function App() {
+function ParagraphComponent(useText: () => any) {
+  const text = useText();
+  return (
+    <p>
+      {text}
+    </p>
+  );
+}
+
+function App({ useUserId } : { useUserId: () => any }): any {
+  const UserIdComponent = ParagraphComponent.bind(null, useUserId);
+
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
+        foo
+        <Subscribe fallback={<p>Loading</p>}>
+          <ErrorBoundary fallback={<p>It's a wipe</p>}>
+            <UserIdComponent />
+          </ErrorBoundary>
+        </Subscribe>
         <a
           className="App-link"
           href="https://reactjs.org"
