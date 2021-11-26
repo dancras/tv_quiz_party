@@ -1,7 +1,9 @@
 version: "3"
+volumes:
+  node_modules:
 services:
   flask_backend:
-    build: .
+    build: server
     container_name: flask_backend
     command: python /app/server/src/main.py
     ports:
@@ -11,14 +13,14 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
   integration_tests:
-    build: .
+    build: server
     container_name: integration_tests
     command: python /app/integration_tests/src/main.py
     volumes:
       - .:/app
     profiles: ["tests"]
   server_tooling:
-    build: .
+    build: server
     container_name: server_tooling
     command: /bin/sh -c "while sleep 1000; do :; done"
     volumes:
@@ -31,3 +33,4 @@ services:
     command: /bin/sh -c "while sleep 1000; do :; done"
     volumes:
       - .:/app:cached
+      - node_modules:/app/client/node_modules
