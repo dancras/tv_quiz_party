@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import React from 'react';
 import { Subscribe } from '@react-rxjs/core'
 import { ErrorBoundary } from 'react-error-boundary'
 import logo from './logo.svg';
