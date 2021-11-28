@@ -54,7 +54,7 @@ async def create_lobby():
 @app.route('/join_lobby', methods = ['POST'])
 async def join_lobby():
     data = await request.get_json()
-    join_code = data['join_code']
+    join_code = int(data['join_code'])
 
     lobby_data = lobbies[join_code]
 
