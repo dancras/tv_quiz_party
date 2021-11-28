@@ -34,3 +34,5 @@ services:
     volumes:
       - .:/app:cached
       - node_modules:/app/client/node_modules
+    ports:
+      - "3000"
