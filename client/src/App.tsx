@@ -3,6 +3,7 @@ import { Subscribe } from '@react-rxjs/core'
 import { ErrorBoundary } from 'react-error-boundary'
 import logo from './logo.svg';
 import './App.css';
+import {Lobby, LobbyScreenProps} from './LobbyScreen';
 
 function ParagraphComponent(useText: () => any) {
   const text = useText();
@@ -13,14 +14,22 @@ function ParagraphComponent(useText: () => any) {
   );
 }
 
-function App({ useUserId } : { useUserId: () => any }): any {
-  const UserIdComponent = ParagraphComponent.bind(null, useUserId);
+function App(
+  useActiveLobby: () => Lobby | null,
+  WelcomeScreen: React.FunctionComponent,
+  LobbyScreen: React.FunctionComponent<LobbyScreenProps>
+) {
+  const lobby = useActiveLobby();
+  const UserIdComponent = ParagraphComponent.bind(null, () => 'abc');
 
   return (
     <div className="App">
       <header className="App-header">
         <img src={logo} className="App-logo" alt="logo" />
-        foo
+        {lobby ?
+          <LobbyScreen lobby={lobby} /> :
+          <WelcomeScreen />
+        }
         <Subscribe fallback={<p>Loading</p>}>
           <ErrorBoundary fallback={<p>It's a wipe</p>}>
             <UserIdComponent />
