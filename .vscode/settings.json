@@ -1,0 +1,23 @@
+{
+    "module-templates.engine": "handlebars",
+    "module-templates.templates": {
+      "typescript-module": {
+        "displayName": "TypeScript Module",
+        "defaultPath": "src",
+        "folder": "",
+        "questions": {
+          "name": "Module Name",
+        },
+        "files": [
+          {
+            "name": "{{pascal name}}.tsx",
+            "contentFile": "./module-templates/typescript.hbs"
+          },
+          {
+            "name": "{{pascal name}}.test.tsx",
+            "contentFile": "./module-templates/typescript-test.hbs"
+          }
+        ]
+      }
+    }
+  }
