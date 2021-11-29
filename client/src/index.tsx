@@ -14,51 +14,51 @@ const [activeLobby$, setActiveLobby] = createSignal<Lobby | null>();
 const [useActiveLobby] = bind(activeLobby$, null);
 
 const handshake = fetch('/api/handshake', {
-    method: 'POST'
-  })
-  .then(x => x.json())
-  .then((handshakeData) => {
-    const lobbyData = handshakeData['active_lobby'];
-    if (lobbyData) {
-      setActiveLobby({
-        joinCode: lobbyData['join_code'],
-        users: lobbyData['users']
-      });
-    }
-  })
+        method: 'POST'
+    })
+    .then(x => x.json())
+    .then((handshakeData) => {
+        const lobbyData = handshakeData['active_lobby'];
+        if (lobbyData) {
+            setActiveLobby({
+                joinCode: lobbyData['join_code'],
+                users: lobbyData['users']
+            });
+        }
+    });
 
 function createLobby() {
-  handshake
-    .then(() => fetch('/api/create_lobby', {
-      method: 'POST'
-    }))
-    .then(response => response.json())
-    .then((lobbyData) => {
-      setActiveLobby({
-        joinCode: lobbyData['join_code'],
-        users: lobbyData['users']
-      });
-    });
+    handshake
+        .then(() => fetch('/api/create_lobby', {
+            method: 'POST'
+        }))
+        .then(response => response.json())
+        .then((lobbyData) => {
+            setActiveLobby({
+                joinCode: lobbyData['join_code'],
+                users: lobbyData['users']
+            });
+        });
 }
 
 function joinLobby(joinCode: string) {
-  handshake
-    .then(() => fetch('/api/join_lobby', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        join_code: joinCode
-      })
-    }))
-    .then(response => response.json())
-    .then((lobbyData) => {
-      setActiveLobby({
-        joinCode: lobbyData['join_code'],
-        users: lobbyData['users']
-      });
-    });
+    handshake
+        .then(() => fetch('/api/join_lobby', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                join_code: joinCode
+            })
+        }))
+        .then(response => response.json())
+        .then((lobbyData) => {
+            setActiveLobby({
+                joinCode: lobbyData['join_code'],
+                users: lobbyData['users']
+            });
+        });
 }
 
 const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
@@ -80,10 +80,10 @@ const TvQuizPartyApp = () => App(useActiveLobby, MainWelcomeScreen, LobbyScreen)
 // const [useUserId] = bind(userId$);
 
 ReactDOM.render(
-  <React.StrictMode>
-    <TvQuizPartyApp />
-  </React.StrictMode>,
-  document.getElementById('root')
+    <React.StrictMode>
+        <TvQuizPartyApp />
+    </React.StrictMode>,
+    document.getElementById('root')
 );
 
 // If you want to start measuring performance in your app, pass a function
