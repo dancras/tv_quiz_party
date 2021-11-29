@@ -2,8 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 // import * as Rx from 'rxjs';
 // import { map } from 'rxjs/operators';
-import { bind } from '@react-rxjs/core'
-import { createSignal } from "@react-rxjs/utils"
+import { bind } from '@react-rxjs/core';
+import { createSignal } from '@react-rxjs/utils';
 import './index.css';
 import App from './App';
 import WelcomeScreen from './WelcomeScreen';
@@ -14,8 +14,8 @@ const [activeLobby$, setActiveLobby] = createSignal<Lobby | null>();
 const [useActiveLobby] = bind(activeLobby$, null);
 
 const handshake = fetch('/api/handshake', {
-        method: 'POST'
-    })
+    method: 'POST'
+})
     .then(x => x.json())
     .then((handshakeData) => {
         const lobbyData = handshakeData['active_lobby'];

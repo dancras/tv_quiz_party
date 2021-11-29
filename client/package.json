@@ -32,7 +32,15 @@
     "extends": [
       "react-app",
       "react-app/jest"
-    ]
+    ],
+    "rules": {
+      "block-spacing": "error",
+      "object-curly-spacing": ["error", "always"],
+      "quotes": ["error", "single"],
+      "semi": "error",
+      "semi-spacing": "error",
+      "space-before-blocks": "error"
+    }
   },
   "browserslist": {
     "production": [

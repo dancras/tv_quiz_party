@@ -1,9 +1,9 @@
 import React from 'react';
-import { Subscribe } from '@react-rxjs/core'
-import { ErrorBoundary } from 'react-error-boundary'
+import { Subscribe } from '@react-rxjs/core';
+import { ErrorBoundary } from 'react-error-boundary';
 import logo from './logo.svg';
 import './App.css';
-import {Lobby, LobbyScreenProps} from './LobbyScreen';
+import { Lobby, LobbyScreenProps } from './LobbyScreen';
 
 function ParagraphComponent(useText: () => any) {
     const text = useText();
