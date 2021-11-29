@@ -3,11 +3,21 @@ import { createSignal } from '@react-rxjs/utils';
 
 import Lobby, { PlainLobby } from './Lobby';
 
+export type LobbyUpdateFn = (lobby: PlainLobby) => void
+
 export default class ActiveLobby {
     value$: Observable<Lobby | null>;
 
-    constructor() {
+    constructor(subscribeToLobbyUpdates: (id: string, handler: LobbyUpdateFn) => void) {
         const [activeLobby$, setActiveLobby] = createSignal<Lobby | null>();
+
+        activeLobby$.subscribe((lobby) => {
+            if (lobby) {
+                subscribeToLobbyUpdates(lobby.id, (lobbyUpdate) => {
+                    lobby.update(lobbyUpdate);
+                });
+            }
+        });
 
         this.value$ = activeLobby$;
         this._setValue = setActiveLobby;

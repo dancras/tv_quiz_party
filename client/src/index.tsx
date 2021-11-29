@@ -6,12 +6,33 @@ import { bind } from '@react-rxjs/core';
 import './index.css';
 import App from './App';
 import WelcomeScreen from './WelcomeScreen';
-import ActiveLobby from './ActiveLobby';
+import ActiveLobby, { LobbyUpdateFn } from './ActiveLobby';
 import { PlainLobby } from './Lobby';
 import LobbyScreen from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 
-const activeLobby = new ActiveLobby();
+function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
+    const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
+    url.protocol = url.protocol.replace('http', 'ws');
+
+    const socket = new WebSocket(url.href);
+
+    socket.addEventListener('open', (event) => {
+        console.debug('Socket is open', event);
+    });
+
+    socket.addEventListener('message', (event) => {
+        console.debug('Socket message', event);
+        const message = JSON.parse(event.data);
+
+        if (message.code === 'USER_JOINED') {
+            handler(createLobbyFromLobbyData(message.data.lobby));
+        }
+    });
+
+}
+
+const activeLobby = new ActiveLobby(subscribeToLobbyUpdates);
 const [useActiveLobby] = bind(activeLobby.value$, null);
 
 function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
