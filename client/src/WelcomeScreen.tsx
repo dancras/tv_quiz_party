@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 function WelcomeScreen(createLobby: () => any, joinLobby: (joinCode: string) => any) {
     const [disable, setDisable] = React.useState(false);

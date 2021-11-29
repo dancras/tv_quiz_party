@@ -1,9 +1,10 @@
 import React from 'react';
-import { Subscribe } from '@react-rxjs/core';
+import { bind, Subscribe } from '@react-rxjs/core';
 import { ErrorBoundary } from 'react-error-boundary';
 import logo from './logo.svg';
 import './App.css';
-import { Lobby, LobbyScreenProps } from './LobbyScreen';
+import Lobby from './Lobby';
+import { LobbyScreenProps } from './LobbyScreen';
 
 function ParagraphComponent(useText: () => any) {
     const text = useText();
@@ -20,12 +21,17 @@ function App(
     const lobby = useActiveLobby();
     const UserIdComponent = ParagraphComponent.bind(null, () => 'abc');
 
+    function bindLobbyUsers(lobby: Lobby) {
+        const [useUsers] = bind(lobby.users$, []);
+        return useUsers;
+    }
+
     return (
         <div className="App">
             <header className="App-header">
                 <img src={logo} className="App-logo" alt="logo" />
                 {lobby ?
-                    <LobbyScreen lobby={lobby} /> :
+                    <LobbyScreen joinCode={lobby.joinCode} useUsers={bindLobbyUsers(lobby)} /> :
                     <WelcomeScreen />
                 }
                 <Subscribe fallback={<p>Loading</p>}>

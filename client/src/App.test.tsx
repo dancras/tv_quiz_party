@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import App from './App';
+import Lobby from './Lobby';
 
 test('displays welcome screen when there is no active lobby', () => {
     const useActiveLobby = () => null;
@@ -15,10 +16,11 @@ test('displays welcome screen when there is no active lobby', () => {
 
 test('displays lobby screen when there is an active lobby', () => {
     const useActiveLobby = () => {
-        return {
+        return new Lobby({
+            id: 'bar',
             joinCode: 'foo',
             users: []
-        };
+        });
     };
     const DummyWelcomeScreen = () => <div>Welcome</div>;
     const DummyLobbyScreen = () => <div>Lobby</div>;

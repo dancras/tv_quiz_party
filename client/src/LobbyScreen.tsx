@@ -1,17 +1,17 @@
 import React from 'react';
 
-export type Lobby = {
+export type LobbyScreenProps = {
     joinCode: string,
-    users: string[]
+    useUsers: () => string[]
 };
 
-export type LobbyScreenProps = { lobby: Lobby };
+function LobbyScreen({ joinCode, useUsers } : LobbyScreenProps) {
+    const users = useUsers();
 
-function LobbyScreen({lobby} : LobbyScreenProps) {
     return (
         <div>
-            <div>{lobby.joinCode}</div>
-            {lobby.users.map((userID) =>
+            <div>{joinCode}</div>
+            {users.map((userID) =>
                 <div key={userID}>{userID}</div>
             )}
         </div>

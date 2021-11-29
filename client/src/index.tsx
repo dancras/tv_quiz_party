@@ -3,15 +3,24 @@ import ReactDOM from 'react-dom';
 // import * as Rx from 'rxjs';
 // import { map } from 'rxjs/operators';
 import { bind } from '@react-rxjs/core';
-import { createSignal } from '@react-rxjs/utils';
 import './index.css';
 import App from './App';
 import WelcomeScreen from './WelcomeScreen';
-import LobbyScreen, { Lobby } from './LobbyScreen';
+import ActiveLobby from './ActiveLobby';
+import { PlainLobby } from './Lobby';
+import LobbyScreen from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 
-const [activeLobby$, setActiveLobby] = createSignal<Lobby | null>();
-const [useActiveLobby] = bind(activeLobby$, null);
+const activeLobby = new ActiveLobby();
+const [useActiveLobby] = bind(activeLobby.value$, null);
+
+function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
+    return {
+        id: lobbyData['id'] as string,
+        joinCode: lobbyData['join_code'],
+        users: lobbyData['users']
+    };
+}
 
 const handshake = fetch('/api/handshake', {
     method: 'POST'
@@ -20,10 +29,7 @@ const handshake = fetch('/api/handshake', {
     .then((handshakeData) => {
         const lobbyData = handshakeData['active_lobby'];
         if (lobbyData) {
-            setActiveLobby({
-                joinCode: lobbyData['join_code'],
-                users: lobbyData['users']
-            });
+            activeLobby.setValue(createLobbyFromLobbyData(lobbyData));
         }
     });
 
@@ -34,10 +40,7 @@ function createLobby() {
         }))
         .then(response => response.json())
         .then((lobbyData) => {
-            setActiveLobby({
-                joinCode: lobbyData['join_code'],
-                users: lobbyData['users']
-            });
+            activeLobby.setValue(createLobbyFromLobbyData(lobbyData));
         });
 }
 
@@ -54,10 +57,7 @@ function joinLobby(joinCode: string) {
         }))
         .then(response => response.json())
         .then((lobbyData) => {
-            setActiveLobby({
-                joinCode: lobbyData['join_code'],
-                users: lobbyData['users']
-            });
+            activeLobby.setValue(createLobbyFromLobbyData(lobbyData));
         });
 }
 

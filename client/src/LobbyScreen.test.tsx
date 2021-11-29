@@ -2,11 +2,9 @@ import { render, screen } from '@testing-library/react';
 import LobbyScreen from './LobbyScreen';
 
 test('join code is displayed', () => {
-    const lobby = {
-        joinCode: 'foo',
-        users: []
-    };
-    const ExampleLobbyScreen = () => LobbyScreen({ lobby });
+    const joinCode = 'foo';
+    const useUsers = () => [];
+    const ExampleLobbyScreen = () => LobbyScreen({ joinCode, useUsers });
     render(<ExampleLobbyScreen />);
 
     const joinCodeElement = screen.getByText('foo');
@@ -14,12 +12,10 @@ test('join code is displayed', () => {
 });
 
 test('users are displayed', () => {
-    const lobby = {
-        joinCode: 'foo',
-        users: ['user1', 'user2']
-    };
+    const joinCode = 'foo';
+    const useUsers = () => ['user1', 'user2'];
+    const ExampleLobbyScreen = () => LobbyScreen({ joinCode, useUsers });
 
-    const ExampleLobbyScreen = () => LobbyScreen({ lobby });
     render(<ExampleLobbyScreen />);
 
     expect(screen.getByText('user1')).toBeInTheDocument();
