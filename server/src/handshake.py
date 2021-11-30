@@ -4,7 +4,7 @@ from quart import request, websocket, g
 
 from app import app
 import auth
-from lobby import get_user_lobby
+from model import get_user_lobby
 from response_helpers import error_response
 
 

@@ -48,6 +48,10 @@ class UnitTests(unittest.IsolatedAsyncioTestCase):
             }
         })
 
+    def test_edit_lobby_can_find_by_join_code(self):
+        lobby = model.create_lobby('foo')
+        expected_same_lobby = model.edit_lobby(lobby['join_code'])
+        self.assertIs(lobby, expected_same_lobby)
 
 if __name__ == "__main__":
     unittest.main()

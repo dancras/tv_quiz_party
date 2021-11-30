@@ -10,20 +10,7 @@ from response_helpers import error_response, linked_resource_response, json_resp
 
 LOBBY_URL = "{}lobby/{}"
 
-lobby_index = 0
-lobbies = {}
 all_lobby_queues = {}
-
-def next_lobby_id():
-    global lobby_index
-    lobby_index += 1
-    return lobby_index
-
-def get_user_lobby(user_id):
-    for lobby_id in lobbies:
-        lobby = lobbies[lobby_id]
-        if user_id in lobby['users']:
-            return lobby
 
 async def broadcast(lobby_id, code, data):
     message = {
@@ -31,71 +18,60 @@ async def broadcast(lobby_id, code, data):
         'data': data
     }
 
-    for queue in all_lobby_queues[int(lobby_id)].values():
+    for queue in all_lobby_queues[lobby_id].values():
         await queue.put(message)
 
 @app.route('/create_lobby', methods = ['POST'])
 async def create_lobby():
-    global lobbies
     global all_lobby_queues
 
-    lobby_id = next_lobby_id()
-    lobbies[lobby_id] = {
-        'id': lobby_id,
-        'host_id': g.user_id,
-        'join_code': lobby_id,
-        'users': [g.user_id]
-    }
+    lobby = model.create_lobby(g.user_id)
+    all_lobby_queues[lobby['id']] = {}
 
-    all_lobby_queues[lobby_id] = {}
-
-    return linked_resource_response(LOBBY_URL, 201, lobby_id, lobbies[lobby_id])
+    return linked_resource_response(LOBBY_URL, 201, lobby['id'], lobby)
 
 @app.route('/join_lobby', methods = ['POST'])
 async def join_lobby():
     data = await request.get_json()
     join_code = int(data['join_code'])
 
-    lobby_data = lobbies[join_code]
+    lobby = model.edit_lobby(join_code)
 
-    if g.user_id in lobby_data['users']:
+    if g.user_id in lobby['users']:
         return error_response(422, "User already in lobby")
 
-    model.add_user_to_lobby(g.user_id, lobby_data)
+    model.add_user_to_lobby(g.user_id, lobby)
 
     loop = asyncio.get_event_loop()
-    loop.create_task(broadcast(lobby_data['id'], 'USER_JOINED', {
+    loop.create_task(broadcast(lobby['id'], 'USER_JOINED', {
         'user_id': g.user_id,
-        'lobby': lobby_data
+        'lobby': lobby
     }))
 
-    return linked_resource_response(LOBBY_URL, 200, lobby_data['id'], lobby_data)
+    return linked_resource_response(LOBBY_URL, 200, lobby['id'], lobby)
 
 
 @app.route("/lobby/<lobby_id>")
 async def fetch_lobby(lobby_id):
-    lobby_id = int(lobby_id)
-
     try:
-        return json_response(lobbies[int(lobby_id)])
+        return json_response(model.read_lobby(lobby_id))
     except KeyError:
         return error_response(404, 'lobby_id is incorrect or Lobby is closed')
 
 
 @app.route("/lobby/<lobby_id>/exit", methods = ['POST'])
 async def exit_lobby(lobby_id):
-    lobby_id = int(lobby_id)
-    lobby = lobbies[lobby_id]
+    lobby = model.edit_lobby(lobby_id)
 
     if lobby['host_id'] == g.user_id:
         loop = asyncio.get_event_loop()
-        loop.create_task(broadcast(lobby_id, 'LOBBY_CLOSED', {}))
-        del lobbies[lobby_id]
+        loop.create_task(broadcast(lobby['id'], 'LOBBY_CLOSED', {}))
+        model.delete_lobby(lobby['id'])
     else:
         lobby['users'].remove(g.user_id)
 
         loop = asyncio.get_event_loop()
-        loop.create_task(broadcast(lobby_id, 'USER_EXITED', {
+        loop.create_task(broadcast(lobby['id'], 'USER_EXITED', {
             'user_id': g.user_id,
             'lobby': lobby
         }))
@@ -105,24 +81,25 @@ async def exit_lobby(lobby_id):
 
 @app.route("/lobby/<lobby_id>/start_round", methods = ['POST'])
 async def start_round(lobby_id):
-    global lobbies
-    lobbies[int(lobby_id)]['round'] = {
+    lobby = model.edit_lobby(lobby_id)
+
+    lobby['round'] = {
         'questions': questions,
-        'answers': model.create_answers_store(lobbies[int(lobby_id)]['users']),
-        'leaderboard': model.create_leaderboard_store(lobbies[int(lobby_id)]['users']),
+        'answers': model.create_answers_store(lobby['users']),
+        'leaderboard': model.create_leaderboard_store(lobby['users']),
     }
 
     loop = asyncio.get_event_loop()
-    loop.create_task(broadcast(lobby_id, 'ROUND_STARTED', lobbies[int(lobby_id)]['round']))
+    loop.create_task(broadcast(lobby['id'], 'ROUND_STARTED', lobby['round']))
 
     return json_response({})
 
 @app.route("/lobby/<lobby_id>/start_question", methods = ['POST'])
 async def start_question(lobby_id):
-    global lobbies
+    lobby = model.edit_lobby(lobby_id)
     data = await request.get_json()
     requested_question_index = int(data['question_index'])
-    current_question = lobbies[int(lobby_id)]['round'].get('current_question')
+    current_question = lobby['round'].get('current_question')
 
     try:
         message = 'first question must start with question_index 0'
@@ -136,37 +113,38 @@ async def start_question(lobby_id):
     except AssertionError:
         return error_response(422, message)
 
-    lobbies[int(lobby_id)]['round']['current_question'] = {
+    lobby['round']['current_question'] = {
         'i': requested_question_index,
         'start_time': (datetime.now(timezone.utc) + timedelta(seconds = 5)).timestamp(),
         'has_ended': False
     }
 
     loop = asyncio.get_event_loop()
-    loop.create_task(broadcast(lobby_id, 'QUESTION_STARTED', lobbies[int(lobby_id)]['round']['current_question']))
+    loop.create_task(broadcast(lobby['id'], 'QUESTION_STARTED', lobby['round']['current_question']))
 
     return json_response({})
 
 
 @app.route("/lobby/<lobby_id>/answer_question", methods = ['POST'])
 async def answer_question(lobby_id):
+    lobby = model.edit_lobby(lobby_id)
     data = await request.get_json()
     question_index = int(data['question_index'])
     answer = str(data['answer'])
 
     try:
         current_question_index = None
-        current_question_index = lobbies[int(lobby_id)]['round']['current_question']['i']
+        current_question_index = lobby['round']['current_question']['i']
         assert current_question_index == question_index
-        assert not lobbies[int(lobby_id)]['round']['current_question']['has_ended']
+        assert not lobby['round']['current_question']['has_ended']
     except (KeyError, AssertionError):
         message = 'Tried to answer question {}. Current question is {}'.format(question_index, current_question_index)
         return error_response(422, message)
 
-    lobbies[int(lobby_id)]['round']['answers'][g.user_id][question_index] = answer
+    lobby['round']['answers'][g.user_id][question_index] = answer
 
     loop = asyncio.get_event_loop()
-    loop.create_task(broadcast(lobby_id, 'ANSWER_RECEIVED', {
+    loop.create_task(broadcast(lobby['id'], 'ANSWER_RECEIVED', {
         'user_id': g.user_id,
         'question_index': question_index,
         'answer': answer
@@ -177,9 +155,9 @@ async def answer_question(lobby_id):
 
 @app.route("/lobby/<lobby_id>/end_question", methods = ['POST'])
 async def end_question(lobby_id):
+    lobby = model.edit_lobby(lobby_id)
     data = await request.get_json()
     question_index = int(data['question_index'])
-    lobby = lobbies[int(lobby_id)]
     round = lobby['round']
 
     try:
@@ -187,7 +165,7 @@ async def end_question(lobby_id):
         assert current_question_index == question_index
         assert not round['current_question']['has_ended']
     except (KeyError, AssertionError):
-         return error_response(422, "Tried to end non-active or ended question")
+        return error_response(422, "Tried to end non-active or ended question")
 
     round['current_question']['has_ended'] = True
 
@@ -201,12 +179,12 @@ async def end_question(lobby_id):
     model.update_leaderboard_positions(round['leaderboard'])
 
     loop = asyncio.get_event_loop()
-    loop.create_task(broadcast(lobby_id, 'LEADERBOARD_UPDATED', round['leaderboard']))
+    loop.create_task(broadcast(lobby['id'], 'LEADERBOARD_UPDATED', round['leaderboard']))
 
     if len(round['questions']) == current_question_index + 1:
         lobby['previous_round'] = round
         lobby['round'] = None
-        loop.create_task(broadcast(lobby_id, 'ROUND_ENDED', round))
+        loop.create_task(broadcast(lobby['id'], 'ROUND_ENDED', round))
 
     return json_response({})
 

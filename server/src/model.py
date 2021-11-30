@@ -1,3 +1,39 @@
+lobby_index = 0
+lobbies = {}
+
+def next_lobby_id():
+    global lobby_index
+    lobby_index += 1
+    return lobby_index
+
+def create_lobby(host_id):
+    lobby_id = next_lobby_id()
+    lobbies[lobby_id] = {
+        'id': lobby_id,
+        'host_id': host_id,
+        'join_code': lobby_id,
+        'users': [host_id],
+        'v': 1
+    }
+    return lobbies[lobby_id]
+
+def read_lobby(lobby_id):
+    return lobbies[int(lobby_id)]
+
+def edit_lobby(id_or_join_code):
+    lobby = lobbies[int(id_or_join_code)]
+    lobby['v'] += 1
+    return lobby
+
+def delete_lobby(lobby_id):
+    del lobbies[int(lobby_id)]
+
+def get_user_lobby(user_id):
+    for lobby_id in lobbies:
+        lobby = lobbies[lobby_id]
+        if user_id in lobby['users']:
+            return lobby
+
 def create_answers_store(user_ids):
     return dict((user_id, {}) for user_id in user_ids)
 
