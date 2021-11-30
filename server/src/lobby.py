@@ -74,7 +74,34 @@ async def join_lobby():
 
 @app.route("/lobby/<lobby_id>")
 async def fetch_lobby(lobby_id):
-    return json_response(lobbies[int(lobby_id)])
+    lobby_id = int(lobby_id)
+
+    try:
+        return json_response(lobbies[int(lobby_id)])
+    except KeyError:
+        return error_response(404, 'lobby_id is incorrect or Lobby is closed')
+
+
+@app.route("/lobby/<lobby_id>/exit", methods = ['POST'])
+async def exit_lobby(lobby_id):
+    lobby_id = int(lobby_id)
+    lobby = lobbies[lobby_id]
+
+    if lobby['host_id'] == g.user_id:
+        loop = asyncio.get_event_loop()
+        loop.create_task(broadcast(lobby_id, 'LOBBY_CLOSED', {}))
+        del lobbies[lobby_id]
+    else:
+        lobby['users'].remove(g.user_id)
+
+        loop = asyncio.get_event_loop()
+        loop.create_task(broadcast(lobby_id, 'USER_EXITED', {
+            'user_id': g.user_id,
+            'lobby': lobby
+        }))
+
+    return json_response({})
+
 
 @app.route("/lobby/<lobby_id>/start_round", methods = ['POST'])
 async def start_round(lobby_id):

@@ -14,6 +14,7 @@ CREATE_LOBBY_URL = "{}/create_lobby".format(BASE_URL)
 JOIN_LOBBY_URL = "{}/join_lobby".format(BASE_URL)
 LOBBY_URL = "{}/lobby/{{}}".format(BASE_URL)
 LOBBY_WS_URL = "{}/ws".format(LOBBY_URL).replace("http:", "ws:")
+LOBBY_EXIT_URL = "{}/exit".format(LOBBY_URL)
 LOBBY_START_ROUND_URL = "{}/start_round".format(LOBBY_URL)
 LOBBY_START_QUESTION_URL = "{}/start_question".format(LOBBY_URL)
 LOBBY_END_QUESTION_URL = "{}/end_question".format(LOBBY_URL)
@@ -132,6 +133,62 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                     self.assertEqual(ws_message['data']['user_id'], other_user_id)
                 except (asyncio.exceptions.TimeoutError):
                     self.fail("No websocket message received")
+
+    async def test_exit_lobby_removes_second_user(self):
+        lobby_data = await self.set_up_lobby()
+
+        async with self.session.ws_connect(LOBBY_WS_URL.format(lobby_data['id'])) as ws:
+
+            join_data = {
+                'join_code': lobby_data['join_code']
+            }
+
+            async with new_handshook_session() as (other_session, other_user_id):
+
+                async with other_session.post(JOIN_LOBBY_URL, json=join_data):
+                    pass
+
+                async with other_session.post(LOBBY_EXIT_URL.format(lobby_data['id']), json={}) as response:
+                    self.assertEqual(response.status, 200)
+
+            def assert_user_exited_message(code, data):
+                self.assertEqual(code, 'USER_EXITED')
+                self.assertEqual(data['user_id'], other_user_id)
+                self.assertEqual(data['lobby']['id'], lobby_data['id'])
+                self.assertNotIn(other_user_id, data['lobby']['users'])
+
+            _, message_data = await at_least_one_message(ws, assert_user_exited_message)
+
+            response = await self.session.get(LOBBY_URL.format(lobby_data['id']))
+            response_data = await response.json()
+
+            self.assertEqual(response_data, message_data['lobby'])
+
+
+    async def test_lobby_closes_when_host_exits(self):
+        lobby_data = await self.set_up_lobby()
+
+        async with new_handshook_session() as (other_session, other_user_id):
+
+            join_data = {
+                'join_code': lobby_data['join_code']
+            }
+
+            async with other_session.post(JOIN_LOBBY_URL, json=join_data):
+                pass
+
+            async with other_session.ws_connect(LOBBY_WS_URL.format(lobby_data['id'])) as ws:
+
+                async with self.session.post(LOBBY_EXIT_URL.format(lobby_data['id']), json={}):
+                    pass
+
+                def assert_lobby_closed_message(code, data):
+                    self.assertEqual(code, 'LOBBY_CLOSED')
+
+                _, message_data = await at_least_one_message(ws, assert_lobby_closed_message)
+
+        async with self.session.get(LOBBY_URL.format(lobby_data['id'])) as response:
+            self.assertEqual(response.status, 404)
 
 
     async def test_handshake_data_includes_active_lobby_data(self):
