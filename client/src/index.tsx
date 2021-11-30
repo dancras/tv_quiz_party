@@ -2,7 +2,8 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { Subject } from 'rxjs';
 import { filter, sample } from 'rxjs/operators';
-import { bind } from '@react-rxjs/core';
+import { bind, Subscribe } from '@react-rxjs/core';
+import { ErrorBoundary } from 'react-error-boundary';
 import './index.css';
 import App from './App';
 import WelcomeScreen from './WelcomeScreen';
@@ -41,7 +42,7 @@ function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
 }
 
 const activeLobby = new ActiveLobby(subscribeToLobbyUpdates);
-const [useActiveLobby] = bind(activeLobby.value$, null);
+const [useActiveLobby] = bind(activeLobby.value$);
 
 function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
     return {
@@ -59,8 +60,11 @@ const handshake = fetch('/api/handshake', {
         const lobbyData = handshakeData['active_lobby'];
         if (lobbyData) {
             activeLobby.setValue(createLobbyFromLobbyData(lobbyData));
+        } else {
+            activeLobby.setValue(null);
         }
-    });
+    })
+    .catch(e => activeLobby.error(e));
 
 function createLobby() {
     handshake
@@ -128,7 +132,11 @@ const TvQuizPartyApp = () => App(useActiveLobby, MainWelcomeScreen, ActiveLobbyS
 
 ReactDOM.render(
     <React.StrictMode>
-        <TvQuizPartyApp />
+        <Subscribe fallback={<p>Loading</p>}>
+            <ErrorBoundary fallback={<p>It's a wipe</p>}>
+                <TvQuizPartyApp />
+            </ErrorBoundary>
+        </Subscribe>
     </React.StrictMode>,
     document.getElementById('root')
 );

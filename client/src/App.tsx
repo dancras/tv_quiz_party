@@ -1,17 +1,9 @@
 import React from 'react';
-import { bind, Subscribe } from '@react-rxjs/core';
-import { ErrorBoundary } from 'react-error-boundary';
+import { bind } from '@react-rxjs/core';
 import logo from './logo.svg';
 import './App.css';
 import Lobby from './Lobby';
 import { LobbyScreenProps } from './LobbyScreen';
-
-function ParagraphComponent(useText: () => any) {
-    const text = useText();
-    return (
-        <p>{text}</p>
-    );
-}
 
 function App(
     useActiveLobby: () => Lobby | null,
@@ -19,7 +11,6 @@ function App(
     LobbyScreen: React.FunctionComponent<LobbyScreenProps>
 ) {
     const lobby = useActiveLobby();
-    const UserIdComponent = ParagraphComponent.bind(null, () => 'abc');
 
     function bindLobbyUsers(lobby: Lobby) {
         const [useUsers] = bind(lobby.users$, []);
@@ -28,25 +19,13 @@ function App(
 
     return (
         <div className="App">
-            <header className="App-header">
-                <img src={logo} className="App-logo" alt="logo" />
+            <header className="App-header"><img src={logo} className="App-logo" alt="logo" /></header>
+            <main className="App-main">
                 {lobby ?
                     <LobbyScreen joinCode={lobby.joinCode} useUsers={bindLobbyUsers(lobby)} /> :
                     <WelcomeScreen />
                 }
-                <Subscribe fallback={<p>Loading</p>}>
-                    <ErrorBoundary fallback={<p>It's a wipe</p>}>
-                        <UserIdComponent />
-                    </ErrorBoundary>
-                </Subscribe>
-                <a className="App-link"
-                   href="https://reactjs.org"
-                   target="_blank"
-                   rel="noopener noreferrer"
-                >
-                    Learn React
-                </a>
-            </header>
+            </main>
         </div>
     );
 }

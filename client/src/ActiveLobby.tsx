@@ -1,5 +1,4 @@
-import { Observable } from 'rxjs';
-import { createSignal } from '@react-rxjs/utils';
+import { Observable, Subject } from 'rxjs';
 
 import Lobby, { PlainLobby } from './Lobby';
 
@@ -7,9 +6,10 @@ export type LobbyUpdateFn = (lobby: PlainLobby) => void
 
 export default class ActiveLobby {
     value$: Observable<Lobby | null>;
+    private _value$: Subject<Lobby | null>;
 
     constructor(subscribeToLobbyUpdates: (id: string, handler: LobbyUpdateFn) => void) {
-        const [activeLobby$, setActiveLobby] = createSignal<Lobby | null>();
+        const activeLobby$ = new Subject<Lobby | null>();
 
         activeLobby$.subscribe((lobby) => {
             if (lobby) {
@@ -19,14 +19,14 @@ export default class ActiveLobby {
             }
         });
 
-        this.value$ = activeLobby$;
-        this._setValue = setActiveLobby;
+        this.value$ = this._value$ = activeLobby$;
     }
 
     setValue(value: PlainLobby | null) {
-        this._setValue(value && new Lobby(value));
+        this._value$.next(value && new Lobby(value));
     }
 
-    private _setValue(value: Lobby | null) {
+    error(err: any) {
+        this._value$.error(err);
     }
 }
