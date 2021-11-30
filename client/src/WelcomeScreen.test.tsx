@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event'
+import userEvent from '@testing-library/user-event';
 import WelcomeScreen from './WelcomeScreen';
 
 test('host lobby button calls create lobby and disables buttons when clicked', () => {

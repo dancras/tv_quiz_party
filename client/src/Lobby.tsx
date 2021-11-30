@@ -11,15 +11,24 @@ class Lobby {
     joinCode: string;
     users$: Observable<string[]>;
     private _users$: BehaviorSubject<string[]>;
+    private _exitHandler: () => void;
 
-    constructor(initial: PlainLobby) {
+    constructor(exitHandler: () => void, initial: PlainLobby) {
         this.id = initial.id;
         this.joinCode = initial.joinCode;
         this.users$ = this._users$ = new BehaviorSubject(initial.users);
+        this._exitHandler = exitHandler;
     }
 
     update(next: PlainLobby) {
         this._users$.next(next.users);
+    }
+
+    exit() {
+        this._exitHandler();
+    }
+
+    startRound() {
     }
 }
 

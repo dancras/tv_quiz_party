@@ -1,27 +1,52 @@
 import React from 'react';
+import { bind } from '@react-rxjs/core';
+
+import Lobby from './Lobby';
 
 export type LobbyScreenProps = {
-    joinCode: string,
-    useUsers: () => string[]
+    lobby: Lobby
 };
 
-function LobbyScreen(exitLobby: () => void, { joinCode, useUsers } : LobbyScreenProps) {
+function UsersList(
+    { useUsers } : { useUsers: () => string[] }
+) {
     const users = useUsers();
+
+    return (
+        <div>
+            {users.map((userID) =>
+                <div key={userID}>{userID}</div>
+            )}
+        </div>
+    );
+}
+
+function LobbyScreen(
+    { lobby } : LobbyScreenProps
+) {
+    const [useUsers] = bind(lobby.users$, []);
+
     const [disable, setDisable] = React.useState(false);
 
     function handleExitLobbyButton() {
-        exitLobby();
+        lobby.exit();
+        setDisable(true);
+    }
+
+    function handleStartRoundButton() {
+        lobby.startRound();
         setDisable(true);
     }
 
     return (
         <div>
-            <div>{joinCode}</div>
-            {users.map((userID) =>
-                <div key={userID}>{userID}</div>
-            )}
+            <div>{lobby.joinCode}</div>
+            <UsersList useUsers={useUsers} />
             <div>
                 <button disabled={disable} onClick={handleExitLobbyButton}>Exit Lobby</button>
+            </div>
+            <div>
+                <button disabled={disable} onClick={handleStartRoundButton}>Start Round</button>
             </div>
         </div>
     );

@@ -1,7 +1,7 @@
 import Lobby from './Lobby';
 
 test('it exposes id and joinCode from initial data', () => {
-    const lobby = new Lobby({
+    const lobby = new Lobby(() => {}, {
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
         users: []
@@ -12,7 +12,7 @@ test('it exposes id and joinCode from initial data', () => {
 });
 
 test('it exposes users as a subscribable value', () => {
-    const lobby = new Lobby({
+    const lobby = new Lobby(() => {}, {
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
         users: []

@@ -14,6 +14,7 @@
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
     "http-proxy-middleware": "^1.3.1",
+    "jest-mock-extended": "^2.0.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-error-boundary": "^3.1.4",
@@ -35,8 +36,14 @@
     ],
     "rules": {
       "block-spacing": "error",
-      "object-curly-spacing": ["error", "always"],
-      "quotes": ["error", "single"],
+      "object-curly-spacing": [
+        "error",
+        "always"
+      ],
+      "quotes": [
+        "error",
+        "single"
+      ],
       "semi": "error",
       "semi-spacing": "error",
       "space-before-blocks": "error"

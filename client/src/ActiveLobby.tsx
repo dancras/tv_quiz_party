@@ -23,7 +23,21 @@ export default class ActiveLobby {
     }
 
     setValue(value: PlainLobby | null) {
-        this._value$.next(value && new Lobby(value));
+        if (value) {
+            const exitHandler = () => {
+                fetch(`/api/lobby/${value.id}/exit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }).then(response => {
+                    this.setValue(null);
+                });
+            };
+            this._value$.next(new Lobby(exitHandler, value));
+        } else {
+            this._value$.next(null);
+        }
     }
 
     error(err: any) {

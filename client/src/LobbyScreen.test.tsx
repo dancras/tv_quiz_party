@@ -1,41 +1,52 @@
+import { BehaviorSubject } from 'rxjs';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
+import LobbyScreen from './LobbyScreen';
+import Lobby from './Lobby';
+import { MockProxy, mock } from 'jest-mock-extended';
+
+let mockLobby: MockProxy<Lobby>;
+
+beforeEach(() => {
+    mockLobby = mock<Lobby>();
+    mockLobby.joinCode = 'join-code';
+    mockLobby.users$ = new BehaviorSubject([]);
+});
 
 test('join code is displayed', () => {
-    const mockExitLobby = jest.fn();
-    const joinCode = 'foo';
-    const useUsers = () => [];
-    const ExampleLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(mockExitLobby, props);
-    render(<ExampleLobbyScreen joinCode={joinCode} useUsers={useUsers} />);
+    mockLobby.joinCode = 'foo';
+
+    render(<LobbyScreen lobby={mockLobby} />);
 
     const joinCodeElement = screen.getByText('foo');
     expect(joinCodeElement).toBeInTheDocument();
 });
 
 test('users are displayed', () => {
-    const mockExitLobby = jest.fn();
-    const joinCode = 'foo';
-    const useUsers = () => ['user1', 'user2'];
-    const ExampleLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(mockExitLobby, props);
+    mockLobby.users$ = new BehaviorSubject(['user1', 'user2']);
 
-    render(<ExampleLobbyScreen joinCode={joinCode} useUsers={useUsers} />);
+    render(<LobbyScreen lobby={mockLobby} />);
 
     expect(screen.getByText('user1')).toBeInTheDocument();
     expect(screen.getByText('user2')).toBeInTheDocument();
 });
 
 test('exit lobby button calls exit lobby', () => {
-    const mockExitLobby = jest.fn();
-    const joinCode = 'foo';
-    const useUsers = () => ['user1', 'user2'];
-    const ExampleLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(mockExitLobby, props);
+    render(<LobbyScreen lobby={mockLobby} />);
 
-    render(<ExampleLobbyScreen joinCode={joinCode} useUsers={useUsers} />);
     const buttonElement = screen.getByText(/Exit Lobby/i);
-
     userEvent.click(buttonElement);
 
-    expect(mockExitLobby).toBeCalled();
+    expect(mockLobby.exit).toBeCalled();
+    expect(buttonElement).toBeDisabled();
+});
+
+test('start button calls start round function when clicked', () => {
+    render(<LobbyScreen lobby={mockLobby} />);
+
+    const buttonElement = screen.getByText(/Start Round/i);
+    userEvent.click(buttonElement);
+
+    expect(mockLobby.startRound).toBeCalled();
     expect(buttonElement).toBeDisabled();
 });

@@ -1,15 +1,13 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import { Subject } from 'rxjs';
-import { filter, sample } from 'rxjs/operators';
 import { bind, Subscribe } from '@react-rxjs/core';
 import { ErrorBoundary } from 'react-error-boundary';
 import './index.css';
 import App from './App';
 import WelcomeScreen from './WelcomeScreen';
 import ActiveLobby, { LobbyUpdateFn } from './ActiveLobby';
-import Lobby, { PlainLobby } from './Lobby';
-import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
+import { PlainLobby } from './Lobby';
+import LobbyScreen from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 
 function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
@@ -94,27 +92,14 @@ function joinLobby(joinCode: string) {
         });
 }
 
-const exitLobbyInput$ = new Subject();
-activeLobby.value$.pipe(
-    sample(exitLobbyInput$),
-    filter((v): v is Lobby => !!v)
-).subscribe((lobby) => {
-    handshake
-        .then(() => fetch(`/api/lobby/${lobby.id}/exit`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }))
-        .then(response => {
-            activeLobby.setValue(null);
-        });
-});
-
 const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
-const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(() => exitLobbyInput$.next(null), props);
+// const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(
+//     () => exitLobbyInput$.next(null),
+//     () => null,
+//     props
+// );
 
-const TvQuizPartyApp = () => App(useActiveLobby, MainWelcomeScreen, ActiveLobbyScreen);
+const TvQuizPartyApp = () => App(useActiveLobby, MainWelcomeScreen, LobbyScreen);
 
 // handshake and create promise which can be passed to app
 // const handshake$ = Rx.from(

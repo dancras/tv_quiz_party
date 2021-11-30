@@ -16,7 +16,7 @@ test('displays welcome screen when there is no active lobby', () => {
 
 test('displays lobby screen when there is an active lobby', () => {
     const useActiveLobby = () => {
-        return new Lobby({
+        return new Lobby(() => {}, {
             id: 'bar',
             joinCode: 'foo',
             users: []
