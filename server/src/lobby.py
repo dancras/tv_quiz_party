@@ -51,10 +51,18 @@ async def join_lobby():
     return linked_resource_response(LOBBY_URL, 200, lobby['id'], lobby)
 
 
+@app.route("/get_lobby/<join_code>")
+async def fetch_lobby_by_join_code(join_code):
+    try:
+        return json_response(model.read_lobby(join_code=join_code))
+    except KeyError:
+        return error_response(404, 'join_code is incorrect or Lobby is closed')
+
+
 @app.route("/lobby/<lobby_id>")
 async def fetch_lobby(lobby_id):
     try:
-        return json_response(model.read_lobby(lobby_id))
+        return json_response(model.read_lobby(lobby_id=lobby_id))
     except KeyError:
         return error_response(404, 'lobby_id is incorrect or Lobby is closed')
 

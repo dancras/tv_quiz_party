@@ -17,8 +17,11 @@ def create_lobby(host_id):
     }
     return lobbies[lobby_id]
 
-def read_lobby(lobby_id):
-    return lobbies[int(lobby_id)]
+def read_lobby(lobby_id=None, join_code=None):
+    if lobby_id is not None:
+        return lobbies[int(lobby_id)]
+    else:
+        return lobbies[int(join_code)]
 
 def edit_lobby(id_or_join_code):
     lobby = lobbies[int(id_or_join_code)]

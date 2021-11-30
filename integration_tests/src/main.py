@@ -12,6 +12,7 @@ BASE_URL = "http://flask_backend:5000"
 HANDSHAKE_URL = "{}/handshake".format(BASE_URL)
 CREATE_LOBBY_URL = "{}/create_lobby".format(BASE_URL)
 JOIN_LOBBY_URL = "{}/join_lobby".format(BASE_URL)
+GET_LOBBY_URL = "{}/get_lobby/{{}}".format(BASE_URL)
 LOBBY_URL = "{}/lobby/{{}}".format(BASE_URL)
 LOBBY_WS_URL = "{}/ws".format(LOBBY_URL).replace("http:", "ws:")
 LOBBY_EXIT_URL = "{}/exit".format(LOBBY_URL)
@@ -72,6 +73,17 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(response.headers['Location'], LOBBY_URL.format(response_data['id']))
         self.assertEqual(response_data['host_id'], self.session_user_id)
+
+    async def test_get_lobby_by_join_code(self):
+        lobby_data = await self.set_up_lobby()
+        lobby_id = lobby_data['id']
+        lobby_join_code = lobby_data['join_code']
+
+        response = await self.session.get(GET_LOBBY_URL.format(lobby_join_code))
+        response_data = await response.json()
+
+        self.assertEqual(response.status, 200)
+        self.assertEqual(response_data, lobby_data)
 
     async def test_get_lobby(self):
         lobby_data = await self.set_up_lobby()
