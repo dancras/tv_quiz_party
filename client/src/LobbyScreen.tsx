@@ -5,8 +5,14 @@ export type LobbyScreenProps = {
     useUsers: () => string[]
 };
 
-function LobbyScreen({ joinCode, useUsers } : LobbyScreenProps) {
+function LobbyScreen(exitLobby: () => void, { joinCode, useUsers } : LobbyScreenProps) {
     const users = useUsers();
+    const [disable, setDisable] = React.useState(false);
+
+    function handleExitLobbyButton() {
+        exitLobby();
+        setDisable(true);
+    }
 
     return (
         <div>
@@ -14,6 +20,9 @@ function LobbyScreen({ joinCode, useUsers } : LobbyScreenProps) {
             {users.map((userID) =>
                 <div key={userID}>{userID}</div>
             )}
+            <div>
+                <button disabled={disable} onClick={handleExitLobbyButton}>Exit Lobby</button>
+            </div>
         </div>
     );
 }

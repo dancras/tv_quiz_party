@@ -1,14 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-// import * as Rx from 'rxjs';
-// import { map } from 'rxjs/operators';
+import { Subject } from 'rxjs';
+import { filter, sample } from 'rxjs/operators';
 import { bind } from '@react-rxjs/core';
 import './index.css';
 import App from './App';
 import WelcomeScreen from './WelcomeScreen';
 import ActiveLobby, { LobbyUpdateFn } from './ActiveLobby';
-import { PlainLobby } from './Lobby';
-import LobbyScreen from './LobbyScreen';
+import Lobby, { PlainLobby } from './Lobby';
+import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 
 function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
@@ -27,6 +27,14 @@ function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
 
         if (message.code === 'USER_JOINED') {
             handler(createLobbyFromLobbyData(message.data.lobby));
+        }
+
+        if (message.code === 'USER_EXITED') {
+            handler(createLobbyFromLobbyData(message.data.lobby));
+        }
+
+        if (message.code === 'LOBBY_CLOSED') {
+            activeLobby.setValue(null);
         }
     });
 
@@ -82,9 +90,27 @@ function joinLobby(joinCode: string) {
         });
 }
 
-const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
+const exitLobbyInput$ = new Subject();
+activeLobby.value$.pipe(
+    sample(exitLobbyInput$),
+    filter((v): v is Lobby => !!v)
+).subscribe((lobby) => {
+    handshake
+        .then(() => fetch(`/api/lobby/${lobby.id}/exit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        }))
+        .then(response => {
+            activeLobby.setValue(null);
+        });
+});
 
-const TvQuizPartyApp = () => App(useActiveLobby, MainWelcomeScreen, LobbyScreen);
+const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
+const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(() => exitLobbyInput$.next(null), props);
+
+const TvQuizPartyApp = () => App(useActiveLobby, MainWelcomeScreen, ActiveLobbyScreen);
 
 // handshake and create promise which can be passed to app
 // const handshake$ = Rx.from(
