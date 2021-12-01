@@ -5,12 +5,14 @@ import { mock } from 'jest-mock-extended';
 
 import ActiveScreen from './ActiveScreen';
 import Lobby, { Round } from './Lobby';
+import { LobbyScreenProps } from './LobbyScreen';
+import { RoundScreenProps } from './RoundScreen';
 
 let useActiveLobby: jest.MockedFunction<() => Lobby | null>;
 let useActiveRound: jest.MockedFunction<() => Round | null>;
 let DummyWelcomeScreen: React.FunctionComponent;
-let DummyLobbyScreen: React.FunctionComponent;
-let DummyRoundScreen: React.FunctionComponent;
+let DummyLobbyScreen: React.FunctionComponent<LobbyScreenProps>;
+let DummyRoundScreen: React.FunctionComponent<RoundScreenProps>;
 
 function ExampleActiveScreen() {
     return ActiveScreen(

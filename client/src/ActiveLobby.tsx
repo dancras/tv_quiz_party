@@ -1,20 +1,24 @@
-import { Observable, Subject } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 
-import Lobby, { PlainLobby } from './Lobby';
+import Lobby, { PlainLobby, PlainRound } from './Lobby';
 
-export type LobbyUpdateFn = (lobby: PlainLobby) => void
+export type LobbyUpdateFn = (lobby: PlainLobby | PlainRound) => void
 
 export default class ActiveLobby {
     value$: Observable<Lobby | null>;
-    private _value$: Subject<Lobby | null>;
+    private _value$: BehaviorSubject<Lobby | null>;
 
     constructor(subscribeToLobbyUpdates: (id: string, handler: LobbyUpdateFn) => void) {
-        const activeLobby$ = new Subject<Lobby | null>();
+        const activeLobby$ = new BehaviorSubject<Lobby | null>(null);
 
         activeLobby$.subscribe((lobby) => {
             if (lobby) {
                 subscribeToLobbyUpdates(lobby.id, (lobbyUpdate) => {
-                    lobby.update(lobbyUpdate);
+                    if ((lobbyUpdate as PlainLobby).id) {
+                        lobby.update(lobbyUpdate as PlainLobby);
+                    } else {
+                        lobby.updateRound(lobbyUpdate as PlainRound);
+                    }
                 });
             }
         });
@@ -38,9 +42,5 @@ export default class ActiveLobby {
         } else {
             this._value$.next(null);
         }
-    }
-
-    error(err: any) {
-        this._value$.error(err);
     }
 }

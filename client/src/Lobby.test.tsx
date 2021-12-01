@@ -4,7 +4,8 @@ test('it exposes id and joinCode from initial data', () => {
     const lobby = new Lobby(() => {}, {
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
-        users: []
+        users: [],
+        activeRound: null
     });
 
     expect(lobby.id).toEqual('lobby-id');
@@ -15,7 +16,8 @@ test('it exposes users as a subscribable value', () => {
     const lobby = new Lobby(() => {}, {
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
-        users: []
+        users: [],
+        activeRound: null
     });
 
     const subscribeSpy = jest.fn();
@@ -26,7 +28,8 @@ test('it exposes users as a subscribable value', () => {
     lobby.update({
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
-        users: ['lobby-user-1']
+        users: ['lobby-user-1'],
+        activeRound: null
     });
 
     expect(subscribeSpy).toHaveBeenCalledWith(['lobby-user-1']);

@@ -1,14 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { bind, Subscribe } from '@react-rxjs/core';
+import { of, from } from 'rxjs';
+import { distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { ErrorBoundary } from 'react-error-boundary';
 import './index.css';
 import App from './App';
+import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
 import ActiveLobby, { LobbyUpdateFn } from './ActiveLobby';
-import { PlainLobby } from './Lobby';
-import LobbyScreen from './LobbyScreen';
+import { PlainLobby, PlainRound, Question } from './Lobby';
+import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
+import RoundScreen from './RoundScreen';
 
 function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
     const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
@@ -35,18 +39,43 @@ function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
         if (message.code === 'LOBBY_CLOSED') {
             activeLobby.setValue(null);
         }
+
+        if (message.code === 'ROUND_STARTED') {
+            handler(createRoundFromRoundData(message.data));
+        }
     });
 
 }
 
 const activeLobby = new ActiveLobby(subscribeToLobbyUpdates);
-const [useActiveLobby] = bind(activeLobby.value$);
 
 function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
     return {
         id: lobbyData['id'] as string,
         joinCode: lobbyData['join_code'],
-        users: lobbyData['users']
+        users: lobbyData['users'],
+        activeRound: lobbyData['round'] && createRoundFromRoundData(lobbyData['round'])
+    };
+}
+
+function createRoundFromRoundData(roundData: any): PlainRound {
+    return {
+        questions: roundData['questions'].map(createQuestionFromQuestionData)
+    };
+}
+
+function createQuestionFromQuestionData(questionData: any): Question {
+    return {
+        videoID: questionData['video_id'] as string,
+        startTime: questionData['start_time'] as number,
+        questionDisplayTime: questionData['question_display_time'] as number,
+        answerLockTime: questionData['answer_lock_time'] as number,
+        answerRevealTime: questionData['answer_reveal_time'] as number,
+        endTime: questionData['end_time'] as number,
+        answerText1: questionData['answer_text_1'] as string,
+        answerText2: questionData['answer_text_2'] as string,
+        answerText3: questionData['answer_text_3'] as string,
+        correctAnswer: questionData['correct_answer'] as string,
     };
 }
 
@@ -61,8 +90,7 @@ const handshake = fetch('/api/handshake', {
         } else {
             activeLobby.setValue(null);
         }
-    })
-    .catch(e => activeLobby.error(e));
+    });
 
 function createLobby() {
     handshake
@@ -92,28 +120,38 @@ function joinLobby(joinCode: string) {
         });
 }
 
+// activeLobby.value$ has a default of null so we need to wait for the
+// handshake before reading from it so we can see loading/error state
+const activeLobby$ = from(handshake).pipe(
+    switchMap(() => activeLobby.value$),
+);
+const [useActiveLobby] = bind(activeLobby$);
+
+const activeLobbyUsers$ = activeLobby.value$.pipe(
+    switchMap(lobby => lobby ? lobby.users$ : of([])),
+    distinctUntilChanged()
+);
+const [useActiveLobbyUsers] = bind(activeLobbyUsers$, []);
+
+const activeRound$ = activeLobby.value$.pipe(
+    switchMap(lobby => lobby ? lobby.activeRound$ : of(null)),
+    distinctUntilChanged()
+);
+const [useActiveRound] = bind(activeRound$, null);
+
 const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
-// const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(
-//     () => exitLobbyInput$.next(null),
-//     () => null,
-//     props
-// );
 
-const TvQuizPartyApp = () => App(useActiveLobby, MainWelcomeScreen, LobbyScreen);
+const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(useActiveLobbyUsers, props);
 
-// handshake and create promise which can be passed to app
-// const handshake$ = Rx.from(
-//   fetch('/api/handshake', {
-//     method: 'POST'
-//   })
-//   .then(x => x.json())
-// );
+const MainActiveScreen = () => ActiveScreen(
+    useActiveLobby,
+    useActiveRound,
+    MainWelcomeScreen,
+    ActiveLobbyScreen,
+    RoundScreen,
+);
 
-// const userId$ = handshake$.pipe(
-//   map(x => x['user_id'])
-// );
-
-// const [useUserId] = bind(userId$);
+const TvQuizPartyApp = () => App(useActiveLobby, MainActiveScreen);
 
 ReactDOM.render(
     <React.StrictMode>

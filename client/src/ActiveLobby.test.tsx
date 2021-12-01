@@ -7,7 +7,8 @@ test('it exposes signal and setter pair', () => {
     const plainLobby = {
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
-        users: []
+        users: [],
+        activeRound: null
     };
 
     const subscribeSpy = jest.fn();
@@ -35,7 +36,8 @@ test('it subscribes to server updates for the currently active lobby', () => {
     const plainLobby = {
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
-        users: []
+        users: [],
+        activeRound: null
     };
     activeLobby.setValue(plainLobby);
 
@@ -47,7 +49,8 @@ test('it subscribes to server updates for the currently active lobby', () => {
     updateFn({
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
-        users: ['lobby-user-1']
+        users: ['lobby-user-1'],
+        activeRound: null
     });
 
     expect(updateID).toEqual('lobby-id');
