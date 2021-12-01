@@ -2,24 +2,33 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Lobby from './Lobby';
-import { LobbyScreenProps } from './LobbyScreen';
 
 function App(
     useActiveLobby: () => Lobby | null,
-    WelcomeScreen: React.FunctionComponent,
-    LobbyScreen: React.FunctionComponent<LobbyScreenProps>
+    ActiveScreen: React.FunctionComponent
 ) {
     const lobby = useActiveLobby();
+    const [disable, setDisable] = React.useState(false);
+
+    function handleExitLobbyButton() {
+        (lobby as Lobby).exit();
+        setDisable(true);
+    }
 
     return (
         <div className="App">
             <header className="App-header"><img src={logo} className="App-logo" alt="logo" /></header>
             <main className="App-main">
-                {lobby ?
-                    <LobbyScreen lobby={lobby} /> :
-                    <WelcomeScreen />
-                }
+                <ActiveScreen />
             </main>
+            <footer>
+                { lobby ?
+                    <div>
+                        <button disabled={disable} onClick={handleExitLobbyButton}>Exit Lobby</button>
+                    </div> :
+                    <></>
+                }
+            </footer>
         </div>
     );
 }
