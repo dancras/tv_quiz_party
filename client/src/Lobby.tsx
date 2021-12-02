@@ -1,27 +1,12 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
+import { PlainRound, Question } from './Round';
+
 export type PlainLobby = {
     id: string,
     joinCode: string,
     users: string[],
     activeRound: PlainRound | null
-};
-
-export type PlainRound = {
-    questions: Question[]
-};
-
-export type Question = {
-    videoID: string,
-    startTime: number,
-    questionDisplayTime: number,
-    answerLockTime: number,
-    answerRevealTime: number,
-    endTime: number,
-    answerText1: string,
-    answerText2: string,
-    answerText3: string,
-    correctAnswer: string
 };
 
 export class Round {

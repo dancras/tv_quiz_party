@@ -31,7 +31,6 @@ test('it subscribes to server updates for the currently active lobby', () => {
     const activeLobby = new ActiveLobby(updateSubscriber);
 
     const valueSubscriber = jest.fn();
-    activeLobby.value$.subscribe(valueSubscriber);
 
     const plainLobby = {
         id: 'lobby-id',
@@ -41,6 +40,7 @@ test('it subscribes to server updates for the currently active lobby', () => {
     };
     activeLobby.setValue(plainLobby);
 
+    activeLobby.value$.subscribe(valueSubscriber);
     const [lobby]: [Lobby] = valueSubscriber.mock.calls[0];
     const usersSubscriber = jest.fn();
     lobby.users$.subscribe(usersSubscriber);

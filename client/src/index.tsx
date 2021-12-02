@@ -9,7 +9,8 @@ import App from './App';
 import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
 import ActiveLobby, { LobbyUpdateFn } from './ActiveLobby';
-import { PlainLobby, PlainRound, Question } from './Lobby';
+import { PlainLobby } from './Lobby';
+import { PlainRound, Question } from './Round';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 import RoundScreen from './RoundScreen';
@@ -164,7 +165,4 @@ ReactDOM.render(
     document.getElementById('root')
 );
 
-// If you want to start measuring performance in your app, pass a function
-// to log results (for example: reportWebVitals(console.log))
-// or send to an analytics endpoint. Learn more: https://bit.ly/CRA-vitals
-reportWebVitals();
+reportWebVitals(console.log);

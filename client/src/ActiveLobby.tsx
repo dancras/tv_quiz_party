@@ -1,6 +1,7 @@
 import { Observable, BehaviorSubject } from 'rxjs';
 
-import Lobby, { PlainLobby, PlainRound } from './Lobby';
+import Lobby, { PlainLobby } from './Lobby';
+import { PlainRound } from './Round';
 
 export type LobbyUpdateFn = (lobby: PlainLobby | PlainRound) => void
 
