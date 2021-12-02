@@ -7,14 +7,15 @@
         "folder": "",
         "questions": {
           "name": "Module Name",
+          "ext": "Extension"
         },
         "files": [
           {
-            "name": "{{pascal name}}.tsx",
+            "name": "{{pascal name}}.{{ext}}",
             "contentFile": "./module-templates/typescript.hbs"
           },
           {
-            "name": "{{pascal name}}.test.tsx",
+            "name": "{{pascal name}}.test.{{ext}}",
             "contentFile": "./module-templates/typescript-test.hbs"
           }
         ]
