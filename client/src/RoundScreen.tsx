@@ -1,6 +1,4 @@
-import React from 'react';
-
-import { Round } from './Lobby';
+import { Round } from './Round';
 
 export type RoundScreenProps = {
     round: Round

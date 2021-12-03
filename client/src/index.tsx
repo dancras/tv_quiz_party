@@ -1,21 +1,21 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { bind, Subscribe } from '@react-rxjs/core';
-import { of, from } from 'rxjs';
-import { distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { of, Subject, BehaviorSubject } from 'rxjs';
+import { distinctUntilChanged, map, switchMap, withLatestFrom } from 'rxjs/operators';
 import { ErrorBoundary } from 'react-error-boundary';
 import './index.css';
 import App from './App';
 import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
-import ActiveLobby, { LobbyUpdateFn } from './ActiveLobby';
+import { setupActiveLobby } from './ActiveLobby';
 import { PlainLobby } from './Lobby';
 import { PlainRound, Question } from './Round';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 import RoundScreen from './RoundScreen';
 
-function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
+function setupLobbyWebSocket(id: string) {
     const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
     url.protocol = url.protocol.replace('http', 'ws');
 
@@ -27,28 +27,89 @@ function subscribeToLobbyUpdates(id: string, handler: LobbyUpdateFn) {
 
     socket.addEventListener('message', (event) => {
         console.debug('Socket message', event);
-        const message = JSON.parse(event.data);
+        const message = JSON.parse(event.data) as ServerMessage;
 
-        if (message.code === 'USER_JOINED') {
-            handler(createLobbyFromLobbyData(message.data.lobby));
-        }
-
-        if (message.code === 'USER_EXITED') {
-            handler(createLobbyFromLobbyData(message.data.lobby));
-        }
-
-        if (message.code === 'LOBBY_CLOSED') {
-            activeLobby.setValue(null);
-        }
-
-        if (message.code === 'ROUND_STARTED') {
-            handler(createRoundFromRoundData(message.data));
+        switch (message.code) {
+            case 'USER_JOINED':
+            case 'USER_EXITED':
+                stateEvents$.next({
+                    code: 'ACTIVE_LOBBY_UPDATED',
+                    data: createLobbyFromLobbyData(message.data.lobby)
+                });
+                break;
+            case 'LOBBY_CLOSED':
+                stateEvents$.next({
+                    code: 'ACTIVE_LOBBY_UPDATED',
+                    data: null
+                });
+                break;
+            case 'ROUND_STARTED':
+                stateEvents$.next({
+                    code: 'ACTIVE_ROUND_UPDATED',
+                    data: createRoundFromRoundData(message.data)
+                });
+                break;
         }
     });
 
+    return socket;
 }
 
-const activeLobby = new ActiveLobby(subscribeToLobbyUpdates);
+type ServerMessage =
+    { code: 'USER_JOINED', data: any } |
+    { code: 'USER_EXITED', data: any } |
+    { code: 'LOBBY_CLOSED', data: null } |
+    { code: 'ROUND_STARTED', data: any };
+
+type AppState = {
+    activeLobby: PlainLobby | null
+};
+type AppStateEvent =
+    { code: 'ACTIVE_LOBBY_UPDATED', data: PlainLobby | null } |
+    { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound };
+
+const stateEvents$ = new Subject<AppStateEvent>();
+const state$ = new BehaviorSubject<AppState>({
+    activeLobby: null
+});
+
+stateEvents$.pipe(
+    withLatestFrom(state$),
+    map(([stateEvent, state]) => {
+        switch (stateEvent.code) {
+            case 'ACTIVE_LOBBY_UPDATED':
+                state.activeLobby = stateEvent.data;
+                return state;
+            case 'ACTIVE_ROUND_UPDATED':
+                if (state.activeLobby) {
+                    state.activeLobby.activeRound = stateEvent.data;
+                }
+                return state;
+        }
+    })
+).subscribe(state$.next.bind(state$));
+
+const activeLobby$ = setupActiveLobby(
+    function (lobbyID: string) {
+        fetch(`/api/lobby/${lobbyID}/exit`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+    },
+    state$.pipe(map(x => x.activeLobby))
+);
+
+let closeSocket: (() => void) | undefined;
+
+activeLobby$.subscribe(activeLobby => {
+    if (closeSocket) closeSocket();
+    if (activeLobby) {
+        const socket = setupLobbyWebSocket(activeLobby.id);
+        closeSocket = socket.close.bind(socket);
+    }
+});
 
 function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
     return {
@@ -61,7 +122,8 @@ function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
 
 function createRoundFromRoundData(roundData: any): PlainRound {
     return {
-        questions: roundData['questions'].map(createQuestionFromQuestionData)
+        questions: roundData['questions'].map(createQuestionFromQuestionData),
+        currentQuestion: null
     };
 }
 
@@ -86,11 +148,11 @@ const handshake = fetch('/api/handshake', {
     .then(x => x.json())
     .then((handshakeData) => {
         const lobbyData = handshakeData['active_lobby'];
-        if (lobbyData) {
-            activeLobby.setValue(createLobbyFromLobbyData(lobbyData));
-        } else {
-            activeLobby.setValue(null);
-        }
+
+        stateEvents$.next({
+            code: 'ACTIVE_LOBBY_UPDATED',
+            data: lobbyData ? createLobbyFromLobbyData(lobbyData) : null
+        });
     });
 
 function createLobby() {
@@ -100,7 +162,10 @@ function createLobby() {
         }))
         .then(response => response.json())
         .then((lobbyData) => {
-            activeLobby.setValue(createLobbyFromLobbyData(lobbyData));
+            stateEvents$.next({
+                code: 'ACTIVE_LOBBY_UPDATED',
+                data: createLobbyFromLobbyData(lobbyData)
+            });
         });
 }
 
@@ -117,24 +182,28 @@ function joinLobby(joinCode: string) {
         }))
         .then(response => response.json())
         .then((lobbyData) => {
-            activeLobby.setValue(createLobbyFromLobbyData(lobbyData));
+            stateEvents$.next({
+                code: 'ACTIVE_LOBBY_UPDATED',
+                data: createLobbyFromLobbyData(lobbyData)
+            });
         });
 }
 
+// TODO reimplement this fix with the new code
 // activeLobby.value$ has a default of null so we need to wait for the
 // handshake before reading from it so we can see loading/error state
-const activeLobby$ = from(handshake).pipe(
-    switchMap(() => activeLobby.value$),
-);
+// const activeLobby$ = from(handshake).pipe(
+//     switchMap(() => activeLobby.value$),
+// );
 const [useActiveLobby] = bind(activeLobby$);
 
-const activeLobbyUsers$ = activeLobby.value$.pipe(
+const activeLobbyUsers$ = activeLobby$.pipe(
     switchMap(lobby => lobby ? lobby.users$ : of([])),
     distinctUntilChanged()
 );
 const [useActiveLobbyUsers] = bind(activeLobbyUsers$, []);
 
-const activeRound$ = activeLobby.value$.pipe(
+const activeRound$ = activeLobby$.pipe(
     switchMap(lobby => lobby ? lobby.activeRound$ : of(null)),
     distinctUntilChanged()
 );

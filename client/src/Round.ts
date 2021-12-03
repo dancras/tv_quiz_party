@@ -1,5 +1,9 @@
+import { Observable } from 'rxjs';
+import { map, shareReplay } from 'rxjs/operators';
+
 export type PlainRound = {
-    questions: Question[]
+    questions: Question[],
+    currentQuestion: CurrentQuestion | null
 };
 
 export type Question = {
@@ -15,11 +19,26 @@ export type Question = {
     correctAnswer: string
 };
 
+type CurrentQuestion = {
+    i: number,
+    startTime: number,
+    hasEnded: boolean
+}
+
+export interface RoundConstructor {
+    new (initialData: PlainRound, latestData: Observable<PlainRound>): Round;
+}
+
 export class Round {
     questions: Question[];
+    currentQuestion$: Observable<CurrentQuestion | null>;
 
-    constructor(initial: PlainRound) {
-        this.questions = initial.questions;
+    constructor(initialData: PlainRound, latestData: Observable<PlainRound>) {
+        this.questions = initialData.questions;
+        this.currentQuestion$ = latestData.pipe(
+            map(x => x.currentQuestion),
+            shareReplay(1)
+        );
     }
 };
 

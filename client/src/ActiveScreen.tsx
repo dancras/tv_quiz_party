@@ -1,4 +1,5 @@
-import Lobby, { Round } from './Lobby';
+import Lobby from './Lobby';
+import Round from './Round';
 import { LobbyScreenProps } from './LobbyScreen';
 import { RoundScreenProps } from './RoundScreen';
 

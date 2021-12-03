@@ -1,6 +1,7 @@
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
+import { filter, map, shareReplay } from 'rxjs/operators';
 
-import { PlainRound, Question } from './Round';
+import Round, { PlainRound, RoundConstructor } from './Round';
 
 export type PlainLobby = {
     id: string,
@@ -9,37 +10,28 @@ export type PlainLobby = {
     activeRound: PlainRound | null
 };
 
-export class Round {
-    questions: Question[];
-
-    constructor(initial: PlainRound) {
-        this.questions = initial.questions;
-    }
-};
-
-class Lobby {
+export class Lobby {
     id: string;
     joinCode: string;
     users$: Observable<string[]>;
-    private _users$: BehaviorSubject<string[]>;
-    activeRound$: BehaviorSubject<Round | null>;
+    activeRound$: Observable<Round | null>;
     private _exitHandler: () => void;
 
-    constructor(exitHandler: () => void, initial: PlainLobby) {
+    constructor(LobbyRound: RoundConstructor, exitHandler: () => void, initial: PlainLobby, latest: Observable<PlainLobby>) {
         this.id = initial.id;
         this.joinCode = initial.joinCode;
-        this.users$ = this._users$ = new BehaviorSubject(initial.users);
-        this.activeRound$ = new BehaviorSubject(initial.activeRound ? new Round(initial.activeRound) : null);
+        this.users$ = latest.pipe(
+            map(x => x.users),
+            shareReplay(1)
+        );
+        const latestPlainRound = latest.pipe(
+            map(x => x.activeRound),
+            filter((x): x is PlainRound => !!x)
+        );
+        this.activeRound$ = latest.pipe(
+            map(x => x.activeRound ? new LobbyRound(x.activeRound, latestPlainRound) : null)
+        );
         this._exitHandler = exitHandler;
-    }
-
-    update(next: PlainLobby) {
-        this._users$.next(next.users);
-        this.activeRound$.next(next.activeRound ? new Round(next.activeRound) : null);
-    }
-
-    updateRound(next: PlainRound | null) {
-        this.activeRound$.next(next ? new Round(next) : null);
     }
 
     exit() {
