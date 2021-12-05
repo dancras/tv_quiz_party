@@ -1,5 +1,17 @@
 import { firstValueFrom, from, of } from 'rxjs';
-import Round from './Round';
+
+import Round, { PlainRound, RoundCmd } from './Round';
+
+const EMPTY_PLAIN_ROUND: PlainRound = {
+    questions: [],
+    currentQuestion: null
+};
+
+let sendCommand: jest.MockedFunction<(cmd: RoundCmd) => void>;
+
+beforeEach(() => {
+    sendCommand = jest.fn();
+});
 
 test('questions is exposed from initialData', () => {
     const initialData = {
@@ -11,40 +23,84 @@ test('questions is exposed from initialData', () => {
         currentQuestion: null
     });
 
-    const round = new Round(initialData, latestData);
+    const round = new Round(sendCommand, initialData, latestData);
 
-    expect(round.questions).toEqual(round.questions);
+    expect(round.questions).toEqual(initialData.questions);
 });
 
-test('currentQuestion$ is derived from latestData', () => {
+test('startNextQuestion sends correct command', () => {
+    const round = new Round(sendCommand, EMPTY_PLAIN_ROUND, of(EMPTY_PLAIN_ROUND));
+
+    round.startNextQuestion();
+
+    expect(sendCommand).toBeCalledWith({ cmd: 'StartNextQuestion' } as RoundCmd);
+});
+
+test('currentQuestion$ adds CurrentQuestionMetadata startTime to all Question times', () => {
     const initialData = {
-        questions: [],
+        questions: [{
+            videoID: 'example-video',
+            startTime: 1,
+            questionDisplayTime: 2,
+            answerLockTime: 3,
+            answerRevealTime: 4,
+            endTime: 5,
+            answerText1: '',
+            answerText2: '',
+            answerText3: '',
+            correctAnswer: ''
+        }],
         currentQuestion: null
     };
     const expectedQuestion = {
-        i: 1,
-        startTime: 1234,
+        i: 0,
+        startTime: 10,
         hasEnded: true
     };
     const latestData = of({
+        // Question data is fixed so we don't use latestData
         questions: [],
         currentQuestion: expectedQuestion
     });
-    const round = new Round(initialData, latestData);
+    const round = new Round(sendCommand, initialData, latestData);
 
     return firstValueFrom(round.currentQuestion$).then((actualQuestion) => {
-        expect(actualQuestion).toEqual(expectedQuestion);
+        expect(actualQuestion).toEqual({
+            i: 0,
+            hasEnded: true,
+            videoID: 'example-video',
+            startTime: 11,
+            questionDisplayTime: 12,
+            answerLockTime: 13,
+            answerRevealTime: 14,
+            endTime: 15,
+            answerText1: '',
+            answerText2: '',
+            answerText3: '',
+            correctAnswer: ''
+        });
     });
 });
 
 test('currentQuestion$ sends latest to new subscribers', () => {
     const initialData = {
-        questions: [],
+        questions: [{
+            videoID: 'example-video',
+            startTime: 1,
+            questionDisplayTime: 2,
+            answerLockTime: 3,
+            answerRevealTime: 4,
+            endTime: 5,
+            answerText1: '',
+            answerText2: '',
+            answerText3: '',
+            correctAnswer: ''
+        }],
         currentQuestion: null
     };
     const expectedQuestion = {
-        i: 1,
-        startTime: 1234,
+        i: 0,
+        startTime: 10,
         hasEnded: true
     };
     const latestData = from([
@@ -57,13 +113,14 @@ test('currentQuestion$ sends latest to new subscribers', () => {
             currentQuestion: expectedQuestion
         }
     ]);
-    const round = new Round(initialData, latestData);
+    const round = new Round(sendCommand, initialData, latestData);
 
     round.currentQuestion$.subscribe(() => {
         // Consume all the values before testing another subscription
     });
 
     return firstValueFrom(round.currentQuestion$).then((actualQuestion) => {
-        expect(actualQuestion).toEqual(expectedQuestion);
+        expect(actualQuestion?.i).toEqual(expectedQuestion.i);
+        expect(actualQuestion?.videoID).toEqual('example-video');
     });
 });

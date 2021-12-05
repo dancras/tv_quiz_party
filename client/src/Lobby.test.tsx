@@ -4,6 +4,7 @@ import Lobby from './Lobby';
 test('it exposes id and joinCode from initialData', () => {
     const lobby = new Lobby(
         jest.fn(),
+        jest.fn(),
         () => {},
         {
             id: 'lobby-id',
@@ -25,6 +26,7 @@ test('it exposes id and joinCode from initialData', () => {
 
 test('users$ is derived from latestData', () => {
     const lobby = new Lobby(
+        jest.fn(),
         jest.fn(),
         () => {},
         {
@@ -69,6 +71,7 @@ test('activeRound$ uses latestData to construct Round', () => {
     const RoundConstructor = jest.fn();
     const lobby = new Lobby(
         RoundConstructor,
+        jest.fn(),
         () => {},
         {
             id: 'lobby-id',
@@ -91,8 +94,8 @@ test('activeRound$ uses latestData to construct Round', () => {
     expect(subscribeSpy).toHaveBeenCalledWith(expectedRound);
 
     const constructorSubscribeSpy = jest.fn();
-    RoundConstructor.mock.calls[0][1].subscribe(constructorSubscribeSpy);
+    RoundConstructor.mock.calls[0][2].subscribe(constructorSubscribeSpy);
 
-    expect(RoundConstructor.mock.calls[0][0]).toBe(expectedPlainRound);
+    expect(RoundConstructor.mock.calls[0][1]).toBe(expectedPlainRound);
     expect(constructorSubscribeSpy).toHaveBeenCalledWith(expectedPlainRound);
 });

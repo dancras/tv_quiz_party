@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { filter, map, shareReplay } from 'rxjs/operators';
 
-import Round, { PlainRound, RoundConstructor } from './Round';
+import Round, { PlainRound, RoundCmd } from './Round';
 
 export type PlainLobby = {
     id: string,
@@ -17,7 +17,13 @@ export class Lobby {
     activeRound$: Observable<Round | null>;
     private _exitHandler: () => void;
 
-    constructor(LobbyRound: RoundConstructor, exitHandler: () => void, initial: PlainLobby, latest: Observable<PlainLobby>) {
+    constructor(
+        LobbyRound: typeof Round,
+        sendCmd: (cmd: RoundCmd) => void,
+        exitHandler: () => void,
+        initial: PlainLobby,
+        latest: Observable<PlainLobby>
+    ) {
         this.id = initial.id;
         this.joinCode = initial.joinCode;
         this.users$ = latest.pipe(
@@ -29,7 +35,7 @@ export class Lobby {
             filter((x): x is PlainRound => !!x)
         );
         this.activeRound$ = latest.pipe(
-            map(x => x.activeRound ? new LobbyRound(x.activeRound, latestPlainRound) : null)
+            map(x => x.activeRound ? new LobbyRound(sendCmd, x.activeRound, latestPlainRound) : null)
         );
         this._exitHandler = exitHandler;
     }

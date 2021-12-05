@@ -4,7 +4,7 @@ import Lobby from './Lobby';
 
 test('null values are passed through from latest', () => {
     const latest = of(null);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -20,7 +20,7 @@ test('created Lobby instances have correct initial data', () => {
         activeRound: null
     };
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -48,7 +48,7 @@ test('no new Lobby instance is emit if the id has not changed', () => {
         plainLobby,
         plainLobby_update
     ]);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -64,7 +64,7 @@ test('created Lobby instances have correct latest data', () => {
         activeRound: null
     };
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
 
     return firstValueFrom(activeLobby$)
         .then((lobby) => lobby ? firstValueFrom(lobby.users$) : [])
@@ -104,7 +104,7 @@ test('adjacent lobby data does not leak into previous Lobby instances', () => {
         plainLobby2_update,
         plainLobby3
     ]);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -125,7 +125,7 @@ test('created Lobby instances are passed an exit handler to make a request', () 
     };
     const sendExitRequestSpy = jest.fn();
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(sendExitRequestSpy, latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), sendExitRequestSpy, latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
