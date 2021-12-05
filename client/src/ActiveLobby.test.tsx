@@ -1,10 +1,10 @@
 import { firstValueFrom, from, lastValueFrom, of } from 'rxjs';
 import { setupActiveLobby } from './ActiveLobby';
-import Lobby from './Lobby';
+import Lobby, { LobbyCmd } from './Lobby';
 
 test('null values are passed through from latest', () => {
     const latest = of(null);
-    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -20,7 +20,7 @@ test('created Lobby instances have correct initial data', () => {
         activeRound: null
     };
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -48,7 +48,7 @@ test('no new Lobby instance is emit if the id has not changed', () => {
         plainLobby,
         plainLobby_update
     ]);
-    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -64,7 +64,7 @@ test('created Lobby instances have correct latest data', () => {
         activeRound: null
     };
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
 
     return firstValueFrom(activeLobby$)
         .then((lobby) => lobby ? firstValueFrom(lobby.users$) : [])
@@ -104,7 +104,7 @@ test('adjacent lobby data does not leak into previous Lobby instances', () => {
         plainLobby2_update,
         plainLobby3
     ]);
-    const activeLobby$ = setupActiveLobby(jest.fn(), jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -116,22 +116,19 @@ test('adjacent lobby data does not leak into previous Lobby instances', () => {
     });
 });
 
-test('created Lobby instances are passed an exit handler to make a request', () => {
+test('created Lobby instances are passed command bus', () => {
     const plainLobby = {
         id: 'lobby-id',
         joinCode: 'lobby-join-code',
         users: [],
         activeRound: null
     };
-    const sendExitRequestSpy = jest.fn();
+    const sendCmdSpy = jest.fn();
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(jest.fn(), sendExitRequestSpy, latest);
-
-    const subscribeSpy = jest.fn();
-    activeLobby$.subscribe(subscribeSpy);
+    const activeLobby$ = setupActiveLobby(sendCmdSpy, latest);
 
     return firstValueFrom(activeLobby$).then(lobby => {
         lobby?.exit();
-        expect(sendExitRequestSpy).toBeCalledWith(plainLobby.id);
+        expect(sendCmdSpy).toBeCalledWith({ cmd: 'ExitLobby' } as LobbyCmd);
     });
 });

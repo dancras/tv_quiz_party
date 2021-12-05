@@ -9,8 +9,8 @@ import App from './App';
 import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
 import { setupActiveLobby } from './ActiveLobby';
-import { PlainLobby } from './Lobby';
-import { CurrentQuestionMetadata, PlainRound, Question, RoundCmd } from './Round';
+import { PlainLobby, LobbyCmd } from './Lobby';
+import { CurrentQuestionMetadata, PlainRound, Question } from './Round';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 import RoundScreen, { RoundScreenProps } from './RoundScreen';
@@ -103,13 +103,43 @@ stateEvents$.pipe(
     })
 ).subscribe(state$.next.bind(state$));
 
-type AppCmd = RoundCmd;
+type AppCmd = LobbyCmd;
 const cmds$ = new Subject<AppCmd>();
 
 cmds$.pipe(
     withLatestFrom(state$)
 ).subscribe(([cmd, state]) => {
     switch (cmd.cmd) {
+        case 'ExitLobby':
+            if (state.activeLobby) {
+                fetch(`/api/lobby/${state.activeLobby.id}/exit`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } else {
+                console.error(
+                    'ExitLobby command failed',
+                    state.activeLobby
+                );
+            }
+            break;
+        case 'StartRound':
+            if (state.activeLobby) {
+                fetch(`/api/lobby/${state.activeLobby.id}/start_round`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+            } else {
+                console.error(
+                    'StartRound command failed',
+                    state.activeLobby
+                );
+            }
+            break;
         case 'StartNextQuestion':
             if (state.activeLobby && state.activeLobby.activeRound) {
                 const lobbyID = state.activeLobby.id;
@@ -131,20 +161,16 @@ cmds$.pipe(
                     state.activeLobby?.activeRound
                 );
             }
+            break;
+        default:
+            const checkExhaustive: never = cmd;
+            console.error('Unhandled Command', checkExhaustive);
     }
 });
 
 
 const activeLobby$ = setupActiveLobby(
     cmds$.next.bind(cmds$),
-    function (lobbyID: string) {
-        fetch(`/api/lobby/${lobbyID}/exit`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-    },
     state$.pipe(map(x => x.activeLobby))
 );
 

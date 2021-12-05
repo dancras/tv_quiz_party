@@ -1,11 +1,17 @@
 import { from, of } from 'rxjs';
-import Lobby from './Lobby';
+import Lobby, { LobbyCmd } from './Lobby';
+
+const EMPTY_PLAIN_LOBBY = {
+    id: '',
+    joinCode: '',
+    users: [],
+    activeRound: null
+};
 
 test('it exposes id and joinCode from initialData', () => {
     const lobby = new Lobby(
         jest.fn(),
         jest.fn(),
-        () => {},
         {
             id: 'lobby-id',
             joinCode: 'lobby-join-code',
@@ -24,11 +30,38 @@ test('it exposes id and joinCode from initialData', () => {
     expect(lobby.joinCode).toEqual('lobby-join-code');
 });
 
+test('startRound sends correct command', () => {
+    const sendCmd = jest.fn();
+    const lobby = new Lobby(
+        jest.fn(),
+        sendCmd,
+        EMPTY_PLAIN_LOBBY,
+        of(EMPTY_PLAIN_LOBBY)
+    );
+
+    lobby.startRound();
+
+    expect(sendCmd).toBeCalledWith({ cmd: 'StartRound' } as LobbyCmd);
+});
+
+test('exit sends correct command', () => {
+    const sendCmd = jest.fn();
+    const lobby = new Lobby(
+        jest.fn(),
+        sendCmd,
+        EMPTY_PLAIN_LOBBY,
+        of(EMPTY_PLAIN_LOBBY)
+    );
+
+    lobby.exit();
+
+    expect(sendCmd).toBeCalledWith({ cmd: 'ExitLobby' } as LobbyCmd);
+});
+
 test('users$ is derived from latestData', () => {
     const lobby = new Lobby(
         jest.fn(),
         jest.fn(),
-        () => {},
         {
             id: 'lobby-id',
             joinCode: 'lobby-join-code',
@@ -72,7 +105,6 @@ test('activeRound$ uses latestData to construct Round', () => {
     const lobby = new Lobby(
         RoundConstructor,
         jest.fn(),
-        () => {},
         {
             id: 'lobby-id',
             joinCode: 'lobby-join-code',

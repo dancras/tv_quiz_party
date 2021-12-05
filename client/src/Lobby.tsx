@@ -3,6 +3,11 @@ import { filter, map, shareReplay } from 'rxjs/operators';
 
 import Round, { PlainRound, RoundCmd } from './Round';
 
+export type LobbyCmd =
+    RoundCmd |
+    { cmd: 'ExitLobby' } |
+    { cmd: 'StartRound' };
+
 export type PlainLobby = {
     id: string,
     joinCode: string,
@@ -15,15 +20,15 @@ export class Lobby {
     joinCode: string;
     users$: Observable<string[]>;
     activeRound$: Observable<Round | null>;
-    private _exitHandler: () => void;
+    private _sendCmd: (cmd: LobbyCmd) => void;
 
     constructor(
         LobbyRound: typeof Round,
-        sendCmd: (cmd: RoundCmd) => void,
-        exitHandler: () => void,
+        sendCmd: (cmd: LobbyCmd) => void,
         initial: PlainLobby,
         latest: Observable<PlainLobby>
     ) {
+        this._sendCmd = sendCmd;
         this.id = initial.id;
         this.joinCode = initial.joinCode;
         this.users$ = latest.pipe(
@@ -37,20 +42,14 @@ export class Lobby {
         this.activeRound$ = latest.pipe(
             map(x => x.activeRound ? new LobbyRound(sendCmd, x.activeRound, latestPlainRound) : null)
         );
-        this._exitHandler = exitHandler;
     }
 
     exit() {
-        this._exitHandler();
+        this._sendCmd({ cmd: 'ExitLobby' });
     }
 
     startRound() {
-        fetch(`/api/lobby/${this.id}/start_round`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+        this._sendCmd({ cmd: 'StartRound' });
     }
 }
 

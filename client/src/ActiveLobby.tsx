@@ -1,14 +1,13 @@
 import { Observable } from 'rxjs';
 import { distinctUntilChanged, filter, map, skipWhile, takeWhile } from 'rxjs/operators';
 
-import Lobby, { PlainLobby } from './Lobby';
-import Round, { PlainRound, RoundCmd } from './Round';
+import Lobby, { PlainLobby, LobbyCmd } from './Lobby';
+import Round, { PlainRound } from './Round';
 
 export type LobbyUpdateFn = (lobby: PlainLobby | PlainRound) => void
 
 export function setupActiveLobby(
-    sendCmd: (cmd: RoundCmd) => void,
-    sendExitRequest: (lobbyID: string) => void,
+    sendCmd: (cmd: LobbyCmd) => void,
     latest: Observable<PlainLobby | null>
 ): Observable<Lobby | null> {
     return latest.pipe(
@@ -17,7 +16,6 @@ export function setupActiveLobby(
             new Lobby(
                 Round,
                 sendCmd,
-                () => sendExitRequest(x.id),
                 x,
                 latest.pipe(
                     filter((y): y is PlainLobby => !!y),
