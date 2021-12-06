@@ -11,7 +11,7 @@ export type PlainRound = {
 
 export type Question = {
     videoID: string,
-    startTime: number,
+    questionStartTime: number,
     questionDisplayTime: number,
     answerLockTime: number,
     answerRevealTime: number,
@@ -42,13 +42,7 @@ export class Round {
         this.questions = initialData.questions;
         this.currentQuestion$ = latestData.pipe(
             map(x => x.currentQuestion ?
-                Object.assign({}, x.currentQuestion, initialData.questions[x.currentQuestion.i], {
-                    startTime: x.currentQuestion.startTime + initialData.questions[x.currentQuestion.i].startTime,
-                    questionDisplayTime: x.currentQuestion.startTime + initialData.questions[x.currentQuestion.i].questionDisplayTime,
-                    answerLockTime: x.currentQuestion.startTime + initialData.questions[x.currentQuestion.i].answerLockTime,
-                    answerRevealTime: x.currentQuestion.startTime + initialData.questions[x.currentQuestion.i].answerRevealTime,
-                    endTime: x.currentQuestion.startTime + initialData.questions[x.currentQuestion.i].endTime
-                }) :
+                Object.assign({}, x.currentQuestion, initialData.questions[x.currentQuestion.i]) :
                 null
             ),
             shareReplay(1)

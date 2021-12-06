@@ -36,11 +36,11 @@ test('startNextQuestion sends correct command', () => {
     expect(sendCommand).toBeCalledWith({ cmd: 'StartNextQuestion' } as RoundCmd);
 });
 
-test('currentQuestion$ adds CurrentQuestionMetadata startTime to all Question times', () => {
+test('currentQuestion$ combines CurrentQuestionMetadata and Question', () => {
     const initialData = {
         questions: [{
             videoID: 'example-video',
-            startTime: 1,
+            questionStartTime: 1,
             questionDisplayTime: 2,
             answerLockTime: 3,
             answerRevealTime: 4,
@@ -69,11 +69,12 @@ test('currentQuestion$ adds CurrentQuestionMetadata startTime to all Question ti
             i: 0,
             hasEnded: true,
             videoID: 'example-video',
-            startTime: 11,
-            questionDisplayTime: 12,
-            answerLockTime: 13,
-            answerRevealTime: 14,
-            endTime: 15,
+            startTime: 10,
+            questionStartTime: 1,
+            questionDisplayTime: 2,
+            answerLockTime: 3,
+            answerRevealTime: 4,
+            endTime: 5,
             answerText1: '',
             answerText2: '',
             answerText3: '',
@@ -86,7 +87,7 @@ test('currentQuestion$ sends latest to new subscribers', () => {
     const initialData = {
         questions: [{
             videoID: 'example-video',
-            startTime: 1,
+            questionStartTime: 1,
             questionDisplayTime: 2,
             answerLockTime: 3,
             answerRevealTime: 4,

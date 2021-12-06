@@ -203,7 +203,7 @@ function createRoundFromRoundData(roundData: any): PlainRound {
 function createCurrentQuestionMetadata(currentQuestionData: any): CurrentQuestionMetadata {
     return {
         i: currentQuestionData['i'],
-        startTime: currentQuestionData['start_time'],
+        startTime: currentQuestionData['start_time'] * 1000,
         hasEnded: currentQuestionData['has_ended']
     };
 }
@@ -211,7 +211,7 @@ function createCurrentQuestionMetadata(currentQuestionData: any): CurrentQuestio
 function createQuestionFromQuestionData(questionData: any): Question {
     return {
         videoID: questionData['video_id'] as string,
-        startTime: questionData['start_time'] as number,
+        questionStartTime: questionData['start_time'] as number,
         questionDisplayTime: questionData['question_display_time'] as number,
         answerLockTime: questionData['answer_lock_time'] as number,
         answerRevealTime: questionData['answer_reveal_time'] as number,
