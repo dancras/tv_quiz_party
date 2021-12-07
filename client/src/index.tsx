@@ -5,6 +5,9 @@ import { of, Subject, BehaviorSubject } from 'rxjs';
 import { distinctUntilChanged, map, switchMap, withLatestFrom } from 'rxjs/operators';
 import { ErrorBoundary } from 'react-error-boundary';
 import './index.css';
+
+import YouTube from 'react-youtube';
+
 import App from './App';
 import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
@@ -14,7 +17,7 @@ import { CurrentQuestionMetadata, PlainRound, Question } from './Round';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 import RoundScreen, { RoundScreenProps } from './RoundScreen';
-import QuestionViewer from './QuestionViewer';
+import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 
 function setupLobbyWebSocket(id: string) {
     const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
@@ -303,8 +306,10 @@ const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
 
 const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(useActiveLobbyUsers, props);
 
+const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(YouTube, window, Date, props);
+
 const ActiveRoundScreen = (props: RoundScreenProps) => RoundScreen(
-    QuestionViewer,
+    ComposedQuestionViewer,
     useCurrentQuestion,
     useCanStartNextQuestion,
     props
