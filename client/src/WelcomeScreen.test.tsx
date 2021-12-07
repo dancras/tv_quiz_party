@@ -30,3 +30,18 @@ test('join lobby form calls join lobby passing lobby code', () => {
     expect(mockJoinLobby).toBeCalledWith('FOO');
     expect(buttonElement).toBeDisabled();
 });
+
+test('join lobby form passes presenter flag when presenter button clicked', () => {
+    const mockJoinLobby = jest.fn();
+    const MockedWelcomeScreen = () => WelcomeScreen(jest.fn(), mockJoinLobby);
+
+    render(<MockedWelcomeScreen />);
+    const inputElement = screen.getByLabelText(/Join Code/i);
+    const buttonElement = screen.getByText(/Presenter/i);
+
+    userEvent.type(inputElement, 'FOO');
+    userEvent.click(buttonElement);
+
+    expect(mockJoinLobby).toBeCalledWith('FOO', true);
+    expect(buttonElement).toBeDisabled();
+});

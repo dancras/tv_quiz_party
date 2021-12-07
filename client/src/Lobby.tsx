@@ -10,14 +10,19 @@ export type LobbyCmd =
 
 export type PlainLobby = {
     id: string,
+    hostID: string,
     joinCode: string,
     users: string[],
-    activeRound: PlainRound | null
+    activeRound: PlainRound | null,
+    isHost: boolean,
+    isPresenter: boolean
 };
 
 export class Lobby {
     id: string;
     joinCode: string;
+    isHost: boolean;
+    isPresenter: boolean;
     users$: Observable<string[]>;
     activeRound$: Observable<Round | null>;
     private _sendCmd: (cmd: LobbyCmd) => void;
@@ -31,6 +36,8 @@ export class Lobby {
         this._sendCmd = sendCmd;
         this.id = initial.id;
         this.joinCode = initial.joinCode;
+        this.isHost = initial.isHost;
+        this.isPresenter = initial.isPresenter;
         this.users$ = latest.pipe(
             map(x => x.users),
             shareReplay(1)

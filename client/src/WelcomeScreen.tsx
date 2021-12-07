@@ -1,6 +1,6 @@
 import React from 'react';
 
-function WelcomeScreen(createLobby: () => any, joinLobby: (joinCode: string) => any) {
+function WelcomeScreen(createLobby: () => any, joinLobby: (joinCode: string, presenter?: boolean) => any) {
     const [disable, setDisable] = React.useState(false);
     const [joinCode, setJoinCode] = React.useState('');
 
@@ -18,6 +18,11 @@ function WelcomeScreen(createLobby: () => any, joinLobby: (joinCode: string) => 
         setDisable(true);
     }
 
+    function handlePresenterButton() {
+        joinLobby(joinCode, true);
+        setDisable(true);
+    }
+
     return (
         <div>
             <div>
@@ -26,6 +31,7 @@ function WelcomeScreen(createLobby: () => any, joinLobby: (joinCode: string) => 
             <div>
                 <label>Join Code <input type="text" onChange={handleJoinCodeChange} /></label>
                 <button disabled={disable} onClick={handleJoinLobbyButton}>Join Lobby</button>
+                <button disabled={disable} onClick={handlePresenterButton}>Presenter</button>
             </div>
         </div>
     );

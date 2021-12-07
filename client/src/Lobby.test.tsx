@@ -1,33 +1,35 @@
 import { from, of } from 'rxjs';
-import Lobby, { LobbyCmd } from './Lobby';
+import Lobby, { LobbyCmd, PlainLobby } from './Lobby';
 
-const EMPTY_PLAIN_LOBBY = {
-    id: '',
-    joinCode: '',
-    users: [],
-    activeRound: null
-};
+function createPlainLobby(fieldsUnderTest?: Partial<PlainLobby>): PlainLobby {
+    return Object.assign({
+        id: '',
+        hostID: '',
+        joinCode: '',
+        users: [],
+        activeRound: null,
+        isHost: false,
+        isPresenter: false
+    }, fieldsUnderTest);
+}
 
-test('it exposes id and joinCode from initialData', () => {
+test('it exposes fields from initialData', () => {
     const lobby = new Lobby(
         jest.fn(),
         jest.fn(),
-        {
+        createPlainLobby({
             id: 'lobby-id',
             joinCode: 'lobby-join-code',
-            users: [],
-            activeRound: null
-        },
-        of({
-            id: 'lobby-id',
-            joinCode: 'lobby-join-code',
-            users: [],
-            activeRound: null
-        })
+            isHost: true,
+            isPresenter: false
+        }),
+        of(createPlainLobby())
     );
 
     expect(lobby.id).toEqual('lobby-id');
     expect(lobby.joinCode).toEqual('lobby-join-code');
+    expect(lobby.isHost).toEqual(true);
+    expect(lobby.isPresenter).toEqual(false);
 });
 
 test('startRound sends correct command', () => {
@@ -35,8 +37,8 @@ test('startRound sends correct command', () => {
     const lobby = new Lobby(
         jest.fn(),
         sendCmd,
-        EMPTY_PLAIN_LOBBY,
-        of(EMPTY_PLAIN_LOBBY)
+        createPlainLobby(),
+        of(createPlainLobby())
     );
 
     lobby.startRound();
@@ -49,8 +51,8 @@ test('exit sends correct command', () => {
     const lobby = new Lobby(
         jest.fn(),
         sendCmd,
-        EMPTY_PLAIN_LOBBY,
-        of(EMPTY_PLAIN_LOBBY)
+        createPlainLobby(),
+        of(createPlainLobby())
     );
 
     lobby.exit();
@@ -62,25 +64,14 @@ test('users$ is derived from latestData', () => {
     const lobby = new Lobby(
         jest.fn(),
         jest.fn(),
-        {
-            id: 'lobby-id',
-            joinCode: 'lobby-join-code',
-            users: [],
-            activeRound: null
-        },
+        createPlainLobby(),
         from([
-            {
-                id: 'lobby-id',
-                joinCode: 'lobby-join-code',
-                users: [],
-                activeRound: null
-            },
-            {
-                id: 'lobby-id',
-                joinCode: 'lobby-join-code',
+            createPlainLobby({
+                users: []
+            }),
+            createPlainLobby({
                 users: ['lobby-user-1'],
-                activeRound: null
-            }
+            })
         ])
     );
 
@@ -105,18 +96,10 @@ test('activeRound$ uses latestData to construct Round', () => {
     const lobby = new Lobby(
         RoundConstructor,
         jest.fn(),
-        {
-            id: 'lobby-id',
-            joinCode: 'lobby-join-code',
-            users: [],
-            activeRound: null
-        },
-        of({
-            id: 'lobby-id',
-            joinCode: 'lobby-join-code',
-            users: [],
+        createPlainLobby(),
+        of(createPlainLobby({
             activeRound: expectedPlainRound
-        })
+        }))
     );
 
     RoundConstructor.mockReturnValue(expectedRound);

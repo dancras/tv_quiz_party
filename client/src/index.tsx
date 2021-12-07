@@ -16,7 +16,8 @@ import { PlainLobby, LobbyCmd } from './Lobby';
 import { CurrentQuestionMetadata, PlainRound, Question } from './Round';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
-import RoundScreen, { RoundScreenProps } from './RoundScreen';
+import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
+import PlayerRoundScreen from './PlayerRoundScreen';
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 
 function setupLobbyWebSocket(id: string) {
@@ -73,15 +74,18 @@ type ServerMessage =
     { code: 'QUESTION_STARTED', data: any };
 
 type AppState = {
+    userID: string,
     activeLobby: PlainLobby | null
 };
 type AppStateEvent =
+    { code: 'USER_ID_SET', data: string } |
     { code: 'ACTIVE_LOBBY_UPDATED', data: PlainLobby | null } |
     { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound } |
     { code: 'CURRENT_QUESTION_UPDATED', data: CurrentQuestionMetadata };
 
 const stateEvents$ = new Subject<AppStateEvent>();
 const state$ = new BehaviorSubject<AppState>({
+    userID: '',
     activeLobby: null
 });
 
@@ -89,8 +93,16 @@ stateEvents$.pipe(
     withLatestFrom(state$),
     map(([stateEvent, state]) => {
         switch (stateEvent.code) {
+            case 'USER_ID_SET':
+                state.userID = stateEvent.data;
+                return state;
             case 'ACTIVE_LOBBY_UPDATED':
                 state.activeLobby = stateEvent.data;
+
+                if (state.activeLobby) {
+                    state.activeLobby.isHost = state.userID === state.activeLobby.hostID;
+                }
+
                 return state;
             case 'ACTIVE_ROUND_UPDATED':
                 if (state.activeLobby) {
@@ -190,9 +202,12 @@ activeLobby$.subscribe(activeLobby => {
 function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
     return {
         id: lobbyData['id'] as string,
-        joinCode: lobbyData['join_code'],
+        hostID: lobbyData['host_id'] as string,
+        joinCode: lobbyData['join_code'] as string,
         users: lobbyData['users'],
-        activeRound: lobbyData['round'] && createRoundFromRoundData(lobbyData['round'])
+        activeRound: lobbyData['round'] && createRoundFromRoundData(lobbyData['round']),
+        isHost: false,
+        isPresenter: false
     };
 }
 
@@ -234,6 +249,11 @@ const handshake = fetch('/api/handshake', {
         const lobbyData = handshakeData['active_lobby'];
 
         stateEvents$.next({
+            code: 'USER_ID_SET',
+            data: handshakeData['user_id']
+        });
+
+        stateEvents$.next({
             code: 'ACTIVE_LOBBY_UPDATED',
             data: lobbyData ? createLobbyFromLobbyData(lobbyData) : null
         });
@@ -253,24 +273,38 @@ function createLobby() {
         });
 }
 
-function joinLobby(joinCode: string) {
-    handshake
-        .then(() => fetch('/api/join_lobby', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                join_code: joinCode
-            })
-        }))
-        .then(response => response.json())
-        .then((lobbyData) => {
-            stateEvents$.next({
-                code: 'ACTIVE_LOBBY_UPDATED',
-                data: createLobbyFromLobbyData(lobbyData)
+function joinLobby(joinCode: string, presenter?: boolean) {
+
+    if (presenter) {
+        fetch(`/api/get_lobby/${joinCode}`)
+            .then(response => response.json())
+            .then((lobbyData) => {
+                const lobby = createLobbyFromLobbyData(lobbyData);
+                lobby.isPresenter = true;
+
+                stateEvents$.next({
+                    code: 'ACTIVE_LOBBY_UPDATED',
+                    data: lobby
+                });
             });
-        });
+    } else {
+        fetch('/api/join_lobby', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    join_code: joinCode
+                })
+            })
+            .then(response => response.json())
+            .then((lobbyData) => {
+                stateEvents$.next({
+                    code: 'ACTIVE_LOBBY_UPDATED',
+                    data: createLobbyFromLobbyData(lobbyData)
+                });
+            });
+    }
 }
 
 // TODO reimplement this fix with the new code
@@ -308,8 +342,13 @@ const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(useActiveLobb
 
 const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(YouTube, window, Date, props);
 
-const ActiveRoundScreen = (props: RoundScreenProps) => RoundScreen(
+const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundScreen(
     ComposedQuestionViewer,
+    useCurrentQuestion,
+    props
+);
+
+const ActivePlayerRoundScreen = (props: RoundScreenProps) => PlayerRoundScreen(
     useCurrentQuestion,
     useCanStartNextQuestion,
     props
@@ -320,7 +359,8 @@ const MainActiveScreen = () => ActiveScreen(
     useActiveRound,
     MainWelcomeScreen,
     ActiveLobbyScreen,
-    ActiveRoundScreen,
+    ActivePresenterRoundScreen,
+    ActivePlayerRoundScreen
 );
 
 const TvQuizPartyApp = () => App(useActiveLobby, MainActiveScreen);
