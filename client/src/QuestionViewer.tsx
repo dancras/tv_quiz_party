@@ -6,13 +6,14 @@ import { Timer } from './lib/Timer';
 
 import { CurrentQuestionMetadata, Question } from './Round';
 
-import Countdown, { CountdownProps } from './Countdown';
+import { CountdownProps } from './Countdown';
 
 export type QuestionViewerProps = {
     question: CurrentQuestionMetadata & Question
 }
 
 function QuestionViewer(
+    Countdown: React.FunctionComponent<CountdownProps>,
     YouTube: React.ComponentClass<YouTubeProps>,
     animator: Animator,
     timer: Timer,
@@ -25,10 +26,6 @@ function QuestionViewer(
     const animateRef = React.useRef<number | null>(null);
 
     const playerRef = React.useRef<any>(null);
-
-    function ComposedCountdown(props: CountdownProps) {
-        return Countdown(animator, timer, props);
-    }
 
     function animate() {
         const now = timer.now();
@@ -67,7 +64,7 @@ function QuestionViewer(
     return (
         <div>
             <YouTube videoId={question.videoID} opts={opts} onReady={onReady} />
-            <ComposedCountdown endsAt={question.startTime} />
+            <Countdown endsAt={question.startTime} />
             <div>{dumpQuestion}</div>
         </div>
     );

@@ -1,42 +1,29 @@
 import { render, screen } from '@testing-library/react';
 import { MockProxy, mock } from 'jest-mock-extended';
 import { act } from 'react-dom/test-utils';
+import { CountdownProps } from './Countdown';
 
 import { Animator, createTestDirector } from './lib/Animator';
 import { Timer } from './lib/Timer';
 
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
-import { CurrentQuestionMetadata, Question } from './Round';
+
+import { createCurrentQuestion } from './Round.test';
 
 type MockPlayer = {
     playVideo: jest.MockedFunction<() => void>,
     seekTo: jest.MockedFunction<(seconds: number, allowSeekAhead: boolean) => void>
 }
 
+let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
 let MockYouTube: any;
 let mockPlayer: MockPlayer;
 let mockAnimator: MockProxy<Animator>;
 let mockTimer: MockProxy<Timer>;
 
-function createQuestion(fieldsUnderTest?: Partial<CurrentQuestionMetadata & Question>): CurrentQuestionMetadata & Question {
-    return Object.assign({
-        i: 0,
-        startTime: 0,
-        hasEnded: false,
-        videoID: '',
-        questionStartTime: 0,
-        questionDisplayTime: 0,
-        answerLockTime: 0,
-        answerRevealTime: 0,
-        endTime: 0,
-        answerText1: '',
-        answerText2: '',
-        answerText3: '',
-        correctAnswer: ''
-    }, fieldsUnderTest);
-}
-
 beforeEach(() => {
+    MockCountdown = jest.fn();
+    MockCountdown.mockReturnValue(<div>Countdown</div>);
     MockYouTube = jest.fn();
     MockYouTube.mockReturnValue(<div>YouTube</div>);
     mockPlayer = {
@@ -48,28 +35,23 @@ beforeEach(() => {
 });
 
 function ExampleQuestionViewer(props: QuestionViewerProps) {
-    return QuestionViewer(MockYouTube, mockAnimator, mockTimer, props);
+    return QuestionViewer(MockCountdown, MockYouTube, mockAnimator, mockTimer, props);
 }
 
-test('it renders Countdown component to question startTime', () => {
-    const animate = createTestDirector(mockAnimator);
-
-    mockTimer.now.mockReturnValue(5000);
-
-    const question = createQuestion({
-        startTime: 10000,
+test('it shows Countdown component', () => {
+    const question = createCurrentQuestion({
+        startTime: 1000,
     });
     render(<ExampleQuestionViewer question={question} />);
 
-    act(() => {
-        animate();
-    });
+    const countdownElement = screen.getByText(/Countdown/i);
+    expect(countdownElement).toBeInTheDocument();
 
-    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(MockCountdown).toBeCalledWith({ endsAt: 1000 }, expect.anything());
 });
 
 test('it sends correct options to the video', () => {
-    const question = createQuestion({
+    const question = createCurrentQuestion({
         startTime: 10000,
         questionStartTime: 2000,
         endTime: 4000,
@@ -90,7 +72,7 @@ test('it sends correct options to the video', () => {
 test('it plays the video when it is ready and the startTime is reached', () => {
     const animate = createTestDirector(mockAnimator);
 
-    const question = createQuestion({
+    const question = createCurrentQuestion({
         startTime: 10000,
         questionStartTime: 2000,
         endTime: 4000,
@@ -122,7 +104,7 @@ test('it plays the video when it is ready and the startTime is reached', () => {
 test('it seeks forward if video is ready after startTime', () => {
     const animate = createTestDirector(mockAnimator);
 
-    const question = createQuestion({
+    const question = createCurrentQuestion({
         startTime: 10000,
         questionStartTime: 20,
         endTime: 40,
@@ -147,7 +129,7 @@ test('it seeks forward if video is ready after startTime', () => {
 test('it does not play video if elapsed time passes end time', () => {
     const animate = createTestDirector(mockAnimator);
 
-    const question = createQuestion({
+    const question = createCurrentQuestion({
         startTime: 10000,
         questionStartTime: 20,
         endTime: 30,

@@ -1,6 +1,6 @@
 import { firstValueFrom, from, of } from 'rxjs';
 
-import Round, { PlainRound, RoundCmd } from './Round';
+import Round, { CurrentQuestionMetadata, PlainRound, Question, RoundCmd } from './Round';
 
 const EMPTY_PLAIN_ROUND: PlainRound = {
     questions: [],
@@ -8,6 +8,24 @@ const EMPTY_PLAIN_ROUND: PlainRound = {
 };
 
 let sendCommand: jest.MockedFunction<(cmd: RoundCmd) => void>;
+
+export function createCurrentQuestion(fieldsUnderTest?: Partial<CurrentQuestionMetadata & Question>): CurrentQuestionMetadata & Question {
+    return Object.assign({
+        i: 0,
+        startTime: 0,
+        hasEnded: false,
+        videoID: '',
+        questionStartTime: 0,
+        questionDisplayTime: 0,
+        answerLockTime: 0,
+        answerRevealTime: 0,
+        endTime: 0,
+        answerText1: '',
+        answerText2: '',
+        answerText3: '',
+        correctAnswer: ''
+    }, fieldsUnderTest);
+}
 
 beforeEach(() => {
     sendCommand = jest.fn();

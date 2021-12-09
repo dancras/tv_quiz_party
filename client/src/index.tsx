@@ -19,6 +19,7 @@ import reportWebVitals from './reportWebVitals';
 import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
 import PlayerRoundScreen from './PlayerRoundScreen';
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
+import Countdown, { CountdownProps } from './Countdown';
 
 function setupLobbyWebSocket(id: string) {
     const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
@@ -340,7 +341,9 @@ const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
 
 const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(useActiveLobbyUsers, props);
 
-const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(YouTube, window, Date, props);
+const ComposedCountdown = (props: CountdownProps) => Countdown(window, Date, props);
+
+const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(ComposedCountdown, YouTube, window, Date, props);
 
 const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundScreen(
     ComposedQuestionViewer,
@@ -349,6 +352,7 @@ const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundSc
 );
 
 const ActivePlayerRoundScreen = (props: RoundScreenProps) => PlayerRoundScreen(
+    ComposedCountdown,
     useCurrentQuestion,
     useCanStartNextQuestion,
     props
