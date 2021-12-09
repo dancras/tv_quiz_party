@@ -9,13 +9,16 @@ export type PlainRound = {
     currentQuestion: CurrentQuestionMetadata | null
 };
 
+export type Seconds = number;
+export type Milliseconds = number;
+
 export type Question = {
     videoID: string,
-    questionStartTime: number,
-    questionDisplayTime: number,
-    answerLockTime: number,
-    answerRevealTime: number,
-    endTime: number,
+    questionStartTime: Seconds,
+    questionDisplayTime: Seconds,
+    answerLockTime: Seconds,
+    answerRevealTime: Seconds,
+    endTime: Seconds,
     answerText1: string,
     answerText2: string,
     answerText3: string,
@@ -24,7 +27,7 @@ export type Question = {
 
 export type CurrentQuestionMetadata = {
     i: number,
-    startTime: number,
+    startTime: Milliseconds,
     hasEnded: boolean
 }
 
@@ -51,6 +54,9 @@ export class Round {
 
     startNextQuestion() {
         this._sendCmd({ cmd: 'StartNextQuestion' });
+    }
+
+    answerQuestion(answer: string) {
     }
 };
 

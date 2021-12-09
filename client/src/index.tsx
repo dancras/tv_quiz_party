@@ -21,6 +21,7 @@ import PlayerRoundScreen from './PlayerRoundScreen';
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 import Countdown, { CountdownProps } from './Countdown';
 import { Timer } from './lib/Timer';
+import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 
 function setupLobbyWebSocket(id: string) {
     const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
@@ -366,7 +367,10 @@ const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundSc
     props
 );
 
+const ComposedAnswerViewer = (props: AnswerViewerProps) => AnswerViewer(window, timer, props);
+
 const ActivePlayerRoundScreen = (props: RoundScreenProps) => PlayerRoundScreen(
+    ComposedAnswerViewer,
     ComposedCountdown,
     useCurrentQuestion,
     useCanStartNextQuestion,

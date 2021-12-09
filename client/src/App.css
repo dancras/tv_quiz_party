@@ -36,3 +36,23 @@
     transform: rotate(360deg);
   }
 }
+
+.selected {
+  border: 1px solid orange;
+}
+
+.incorrect button {
+  background-color: indianred;
+}
+
+.correct .selected {
+  background-color: greenyellow;
+}
+
+.incorrect-answer {
+  border: 1px solid red;
+}
+
+.correct-answer {
+  border: 1px solid greenyellow;
+}

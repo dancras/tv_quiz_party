@@ -8,7 +8,9 @@ import PlayerRoundScreen from './PlayerRoundScreen';
 import { CountdownProps } from './Countdown';
 
 import { createCurrentQuestion } from './Round.test';
+import { AnswerViewerProps } from './AnswerViewer';
 
+let MockAnswerViewer: jest.MockedFunction<React.FunctionComponent<AnswerViewerProps>>;
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
 let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestionMetadata & Question | null>;
 let useCanStartNextQuestion: jest.MockedFunction<() => boolean>;
@@ -17,6 +19,7 @@ function ExamplePlayerRoundScreen(
     props : RoundScreenProps
 ) {
     return PlayerRoundScreen(
+        MockAnswerViewer,
         MockCountdown,
         useCurrentQuestion,
         useCanStartNextQuestion,
@@ -25,6 +28,8 @@ function ExamplePlayerRoundScreen(
 }
 
 beforeEach(() => {
+    MockAnswerViewer = jest.fn();
+    MockAnswerViewer.mockReturnValue(<div>AnswerViewer</div>);
     MockCountdown = jest.fn();
     MockCountdown.mockReturnValue(<div>Countdown</div>);
     useCurrentQuestion = jest.fn();
@@ -67,4 +72,18 @@ test('Countdown component is shown when there is a current question', () => {
     expect(countdownElement).toBeInTheDocument();
 
     expect(MockCountdown).toBeCalledWith({ endsAt: 1000 }, expect.anything());
+});
+
+test('AnswerViewer component is shown when there is a current question', () => {
+    const expectedRound = mock<Round>();
+    const expectedQuestion = createCurrentQuestion({
+        startTime: 1000
+    });
+    useCurrentQuestion.mockReturnValue(expectedQuestion);
+
+    render(<ExamplePlayerRoundScreen round={expectedRound} />);
+
+    expect(screen.getByText('AnswerViewer')).toBeInTheDocument();
+
+    expect(MockAnswerViewer).toBeCalledWith({ round: expectedRound, question: expectedQuestion }, expect.anything());
 });
