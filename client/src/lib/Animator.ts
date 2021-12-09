@@ -5,7 +5,7 @@ export interface Animator {
     cancelAnimationFrame(handle: number): void
 }
 
-export function createTestDirector(mockAnimator: MockProxy<Animator>): () => void {
+export function createTestDirector(mockAnimator: MockProxy<Animator>): (now?: number) => void {
     let nextFrame = 0;
     let nextHandle = 0;
     let cancelledFrames: number[] = [];
@@ -13,11 +13,11 @@ export function createTestDirector(mockAnimator: MockProxy<Animator>): () => voi
     mockAnimator.requestAnimationFrame.mockImplementation(() => nextHandle++);
     mockAnimator.cancelAnimationFrame.mockImplementation((handle) => cancelledFrames.push(handle));
 
-    return function action() {
+    return function action(now = 0) {
         const lengthBeforeAction = mockAnimator.requestAnimationFrame.mock.calls.length;
         for (nextFrame; nextFrame < lengthBeforeAction; nextFrame++) {
             if (!cancelledFrames.includes(nextFrame)) {
-                mockAnimator.requestAnimationFrame.mock.calls[nextFrame][0](0);
+                mockAnimator.requestAnimationFrame.mock.calls[nextFrame][0](now);
             }
         }
     };
