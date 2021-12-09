@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 
 from quart import request, websocket, g
 
@@ -43,7 +44,8 @@ async def handshake():
     response = app.response_class(
         response = json.dumps({
             'user_id': user_id,
-            'active_lobby': get_user_lobby(user_id)
+            'active_lobby': get_user_lobby(user_id),
+            'utc_time': datetime.now(timezone.utc).timestamp()
         }),
         status = 200,
         mimetype = 'application/json'

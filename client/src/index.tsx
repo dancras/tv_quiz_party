@@ -20,6 +20,7 @@ import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
 import PlayerRoundScreen from './PlayerRoundScreen';
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 import Countdown, { CountdownProps } from './Countdown';
+import { Timer } from './lib/Timer';
 
 function setupLobbyWebSocket(id: string) {
     const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
@@ -242,11 +243,25 @@ function createQuestionFromQuestionData(questionData: any): Question {
     };
 }
 
+let timeOffset = 0;
+const timer: Timer = {
+    now() {
+        return Date.now() + timeOffset;
+    }
+};
+
+const handshakeSendTime = Date.now();
 const handshake = fetch('/api/handshake', {
     method: 'POST'
 })
     .then(x => x.json())
     .then((handshakeData) => {
+        const handshakeReceivedTime = Date.now();
+        const serverTime = handshakeData['utc_time'] * 1000;
+        const sendTime = serverTime - handshakeSendTime;
+        const receiveTime = handshakeReceivedTime - serverTime;
+        timeOffset = sendTime - ((sendTime + receiveTime) / 2);
+
         const lobbyData = handshakeData['active_lobby'];
 
         stateEvents$.next({
@@ -341,9 +356,9 @@ const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
 
 const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(useActiveLobbyUsers, props);
 
-const ComposedCountdown = (props: CountdownProps) => Countdown(window, Date, props);
+const ComposedCountdown = (props: CountdownProps) => Countdown(window, timer, props);
 
-const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(ComposedCountdown, YouTube, window, Date, props);
+const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(ComposedCountdown, YouTube, window, timer, props);
 
 const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundScreen(
     ComposedQuestionViewer,
