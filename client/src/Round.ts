@@ -2,7 +2,9 @@ import { Observable } from 'rxjs';
 import { distinctUntilChanged, map, shareReplay } from 'rxjs/operators';
 
 export type RoundCmd =
-    { cmd: 'StartNextQuestion' }
+    { cmd: 'StartNextQuestion' } |
+    { cmd: 'AnswerQuestion', data: string } |
+    { cmd: 'EndQuestion' };
 
 export type PlainRound = {
     questions: Question[],
@@ -80,9 +82,11 @@ export class Round {
     }
 
     answerQuestion(answer: string) {
+        this._sendCmd({ cmd: 'AnswerQuestion', data: answer });
     }
 
     endQuestion() {
+        this._sendCmd({ cmd: 'EndQuestion' });
     }
 };
 

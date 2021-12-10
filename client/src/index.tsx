@@ -156,6 +156,7 @@ cmds$.pipe(
                 );
             }
             break;
+
         case 'StartRound':
             if (state.activeLobby) {
                 fetch(`/api/lobby/${state.activeLobby.id}/start_round`, {
@@ -171,6 +172,7 @@ cmds$.pipe(
                 );
             }
             break;
+
         case 'StartNextQuestion':
             if (state.activeLobby && state.activeLobby.activeRound) {
                 const lobbyID = state.activeLobby.id;
@@ -182,7 +184,7 @@ cmds$.pipe(
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        question_index: currentQuestionIndex ? currentQuestionIndex + 1 : 0
+                        question_index: currentQuestionIndex !== undefined ? currentQuestionIndex + 1 : 0
                     })
                 });
             } else {
@@ -193,6 +195,48 @@ cmds$.pipe(
                 );
             }
             break;
+
+        case 'AnswerQuestion':
+            if (state.activeLobby && state.activeLobby.activeRound && state.activeLobby.activeRound.currentQuestion) {
+                fetch(`/api/lobby/${state.activeLobby.id}/answer_question`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        question_index: state.activeLobby.activeRound.currentQuestion.i,
+                        answer: cmd.data
+                    })
+                });
+            } else {
+                console.error('AnswerQuestion command failed', state.activeLobby);
+            }
+            break;
+
+        case 'EndQuestion':
+            if (state.activeLobby && state.activeLobby.activeRound && state.activeLobby.activeRound.currentQuestion) {
+                if (state.activeLobby.isHost) {
+                    fetch(`/api/lobby/${state.activeLobby.id}/end_question`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            question_index: state.activeLobby.activeRound.currentQuestion.i,
+                        })
+                    });
+                }
+
+                state.activeLobby.activeRound.currentQuestion.hasEnded = true;
+                stateEvents$.next({
+                    code: 'CURRENT_QUESTION_UPDATED',
+                    data: state.activeLobby.activeRound.currentQuestion
+                });
+            } else {
+                console.error('AnswerQuestion command failed', state.activeLobby);
+            }
+            break;
+
         default:
             const checkExhaustive: never = cmd;
             console.error('Unhandled Command', checkExhaustive);

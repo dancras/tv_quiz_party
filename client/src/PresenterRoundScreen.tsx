@@ -16,7 +16,7 @@ function PresenterRoundScreen(
     return (
         <div>
             { currentQuestion ?
-                <QuestionViewer question={currentQuestion} /> :
+                <QuestionViewer key={currentQuestion.i} question={currentQuestion} /> :
                 <div>Waiting for host to start...</div>
 
             }

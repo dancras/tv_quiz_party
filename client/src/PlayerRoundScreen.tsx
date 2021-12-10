@@ -24,8 +24,8 @@ function PlayerRoundScreen(
         <div>
             { currentQuestion ?
                 <>
-                    <Countdown endsAt={currentQuestion.startTime}></Countdown>
-                    <AnswerViewer round={round} question={currentQuestion}></AnswerViewer>
+                    <Countdown key={currentQuestion.i} endsAt={currentQuestion.startTime}></Countdown>
+                    <AnswerViewer key={currentQuestion.i} round={round} question={currentQuestion}></AnswerViewer>
                 </>:
                 <div>Waiting for host to start...</div>
 
