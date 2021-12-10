@@ -1,12 +1,15 @@
 import React from 'react';
+import { CommandButtonProps } from './CommandButton';
 
-function WelcomeScreen(createLobby: () => any, joinLobby: (joinCode: string, presenter?: boolean) => any) {
-    const [disable, setDisable] = React.useState(false);
+function WelcomeScreen(
+    CommandButton: React.FunctionComponent<CommandButtonProps>,
+    createLobby: () => any,
+    joinLobby: (joinCode: string, presenter?: boolean
+) => any) {
     const [joinCode, setJoinCode] = React.useState('');
 
     function handleHostLobbyButton() {
         createLobby();
-        setDisable(true);
     }
 
     function handleJoinCodeChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -15,23 +18,21 @@ function WelcomeScreen(createLobby: () => any, joinLobby: (joinCode: string, pre
 
     function handleJoinLobbyButton() {
         joinLobby(joinCode);
-        setDisable(true);
     }
 
     function handlePresenterButton() {
         joinLobby(joinCode, true);
-        setDisable(true);
     }
 
     return (
         <div>
             <div>
-                <button disabled={disable} onClick={handleHostLobbyButton}>Host Lobby</button>
+                <CommandButton onClick={handleHostLobbyButton}>Host Lobby</CommandButton>
             </div>
             <div>
                 <label>Join Code <input type="text" onChange={handleJoinCodeChange} /></label>
-                <button disabled={disable} onClick={handleJoinLobbyButton}>Join Lobby</button>
-                <button disabled={disable} onClick={handlePresenterButton}>Presenter</button>
+                <CommandButton onClick={handleJoinLobbyButton}>Join Lobby</CommandButton>
+                <CommandButton onClick={handlePresenterButton}>Presenter</CommandButton>
             </div>
         </div>
     );

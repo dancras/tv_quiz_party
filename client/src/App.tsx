@@ -2,17 +2,17 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Lobby from './Lobby';
+import { CommandButtonProps } from './CommandButton';
 
 function App(
+    CommandButton: React.FunctionComponent<CommandButtonProps>,
     useActiveLobby: () => Lobby | null,
     ActiveScreen: React.FunctionComponent
 ) {
     const lobby = useActiveLobby();
-    const [disable, setDisable] = React.useState(false);
 
     function handleExitLobbyButton() {
         (lobby as Lobby).exit();
-        setDisable(true);
     }
 
     return (
@@ -24,7 +24,7 @@ function App(
             <footer>
                 { lobby ?
                     <div>
-                        <button disabled={disable} onClick={handleExitLobbyButton}>Exit Lobby</button>
+                        <CommandButton onClick={handleExitLobbyButton}>Exit Lobby</CommandButton>
                     </div> :
                     <></>
                 }

@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { CommandButtonProps } from './CommandButton';
 import { Animator } from './lib/Animator';
 import { Timer } from './lib/Timer';
 import Round, { CurrentQuestionMetadata, Question } from './Round';
@@ -9,6 +10,7 @@ export type AnswerViewerProps = {
 }
 
 function AnswerViewer(
+    CommandButton: React.FunctionComponent<CommandButtonProps>,
     animator: Animator,
     timer: Timer,
     { question, round }: AnswerViewerProps
@@ -31,7 +33,6 @@ function AnswerViewer(
     function handleAnswerButton(event: React.MouseEvent<HTMLButtonElement>) {
         const answer = event.currentTarget.getAttribute('data-answer');
         if (answer) {
-            setDisable(true);
             round.answerQuestion(answer);
             setSelectedAnswer(answer);
         } else {
@@ -77,24 +78,24 @@ function AnswerViewer(
         <div className={getContainerClasses()}>
             { now >= question.questionDisplayTime ?
                 <>
-                    <button
+                    <CommandButton
                         className={getButtonClasses('1')}
                         disabled={disable}
                         data-answer={'1'}
                         onClick={handleAnswerButton}
-                    >{question.answerText1}</button>
-                    <button
+                    >{question.answerText1}</CommandButton>
+                    <CommandButton
                         className={getButtonClasses('2')}
                         disabled={disable}
                         data-answer={'2'}
                         onClick={handleAnswerButton}
-                    >{question.answerText2}</button>
-                    <button
+                    >{question.answerText2}</CommandButton>
+                    <CommandButton
                         className={getButtonClasses('3')}
                         disabled={disable}
                         data-answer={'3'}
                         onClick={handleAnswerButton}
-                    >{question.answerText3}</button>
+                    >{question.answerText3}</CommandButton>
                 </> :
                 <></>
             }

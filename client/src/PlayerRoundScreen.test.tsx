@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mock } from 'jest-mock-extended';
 
+import { CommandButtonProps } from './CommandButton';
 import Round, { CurrentQuestionMetadata, Question } from './Round';
 import { RoundScreenProps } from './PresenterRoundScreen';
 import PlayerRoundScreen from './PlayerRoundScreen';
@@ -10,6 +11,7 @@ import { CountdownProps } from './Countdown';
 import { createCurrentQuestion } from './Round.test';
 import { AnswerViewerProps } from './AnswerViewer';
 
+let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let MockAnswerViewer: jest.MockedFunction<React.FunctionComponent<AnswerViewerProps>>;
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
 let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestionMetadata & Question | null>;
@@ -19,6 +21,7 @@ function ExamplePlayerRoundScreen(
     props : RoundScreenProps
 ) {
     return PlayerRoundScreen(
+        DummyCommandButton,
         MockAnswerViewer,
         MockCountdown,
         useCurrentQuestion,
@@ -28,6 +31,7 @@ function ExamplePlayerRoundScreen(
 }
 
 beforeEach(() => {
+    DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     MockAnswerViewer = jest.fn();
     MockAnswerViewer.mockReturnValue(<div>AnswerViewer</div>);
     MockCountdown = jest.fn();
@@ -45,9 +49,9 @@ test('start question button calls start question function', () => {
 
     const buttonElement = screen.getByText(/Start Question/i);
     userEvent.click(buttonElement);
+    expect(buttonElement).toHaveAttribute('data-x');
 
     expect(mockRound.startNextQuestion).toBeCalled();
-    expect(buttonElement).toBeDisabled();
 });
 
 test('start question button not shown when canStartNextQuestion is false', () => {

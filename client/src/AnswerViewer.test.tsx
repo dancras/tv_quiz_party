@@ -10,16 +10,19 @@ import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 
 import { createCurrentQuestion } from './Round.test';
 import Round from './Round';
+import { CommandButtonProps } from './CommandButton';
 
+let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let mockAnimator: MockProxy<Animator>;
 let mockTimer: MockProxy<Timer>;
 let mockRound: MockProxy<Round>;
 
 function ExampleAnswerViewer(props: AnswerViewerProps) {
-    return AnswerViewer(mockAnimator, mockTimer, props);
+    return AnswerViewer(DummyCommandButton, mockAnimator, mockTimer, props);
 }
 
 beforeEach(() => {
+    DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     mockAnimator = mock<Animator>();
     mockTimer = mock<Timer>();
     mockRound = mock<Round>();
@@ -51,36 +54,9 @@ test('it displays answers at questionDisplayTime', () => {
         animate();
     });
 
-    expect(screen.getByText('Answer 1')).toBeInTheDocument();
-    expect(screen.getByText('Answer 2')).toBeInTheDocument();
-    expect(screen.getByText('Answer 3')).toBeInTheDocument();
-});
-
-test('it calls answerQuestion once on round when an answer is clicked', () => {
-    const question = createCurrentQuestion({
-        startTime: 10000,
-        questionStartTime: 10,
-        questionDisplayTime: 20,
-        answerLockTime: 30,
-        answerText1: 'Answer 1',
-        answerText2: 'Answer 2',
-        answerText3: 'Answer 3',
-    });
-
-    mockTimer.now.mockReturnValue(20000);
-
-    render(<ExampleAnswerViewer round={mockRound} question={question} />);
-
-    const answerElement = screen.getByText('Answer 1');
-    const otherAnswerElement = screen.getByText('Answer 2');
-    userEvent.click(answerElement);
-
-    expect(mockRound.answerQuestion).toBeCalledWith('1');
-
-    userEvent.click(answerElement);
-    userEvent.click(otherAnswerElement);
-
-    expect(mockRound.answerQuestion).toHaveBeenCalledTimes(1);
+    expect(screen.getByText('Answer 1')).toHaveAttribute('data-x');
+    expect(screen.getByText('Answer 2')).toHaveAttribute('data-x');
+    expect(screen.getByText('Answer 3')).toHaveAttribute('data-x');
 });
 
 test('it indicates selected answer', () => {

@@ -22,6 +22,7 @@ import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 import Countdown, { CountdownProps } from './Countdown';
 import { Timer } from './lib/Timer';
 import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
+import CommandButton, { CommandButtonProps } from './CommandButton';
 
 function setupLobbyWebSocket(id: string) {
     const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
@@ -86,6 +87,8 @@ type AppStateEvent =
     { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound } |
     { code: 'CURRENT_QUESTION_UPDATED', data: CurrentQuestionMetadata };
 
+const areCommandsDisabled$ = new BehaviorSubject(false);
+
 const stateEvents$ = new Subject<AppStateEvent>();
 const state$ = new BehaviorSubject<AppState>({
     userID: '',
@@ -124,7 +127,10 @@ stateEvents$.pipe(
                 return state;
         }
     })
-).subscribe(state$.next.bind(state$));
+).subscribe((nextState) => {
+    state$.next(nextState);
+    areCommandsDisabled$.next(false);
+});
 
 type AppCmd = LobbyCmd;
 const cmds$ = new Subject<AppCmd>();
@@ -132,6 +138,8 @@ const cmds$ = new Subject<AppCmd>();
 cmds$.pipe(
     withLatestFrom(state$)
 ).subscribe(([cmd, state]) => {
+    areCommandsDisabled$.next(true);
+
     switch (cmd.cmd) {
         case 'ExitLobby':
             if (state.activeLobby) {
@@ -283,6 +291,9 @@ const handshake = fetch('/api/handshake', {
     });
 
 function createLobby() {
+
+    areCommandsDisabled$.next(true);
+
     handshake
         .then(() => fetch('/api/create_lobby', {
             method: 'POST'
@@ -297,6 +308,8 @@ function createLobby() {
 }
 
 function joinLobby(joinCode: string, presenter?: boolean) {
+
+    areCommandsDisabled$.next(true);
 
     if (presenter) {
         fetch(`/api/get_lobby/${joinCode}`)
@@ -326,6 +339,9 @@ function joinLobby(joinCode: string, presenter?: boolean) {
                     code: 'ACTIVE_LOBBY_UPDATED',
                     data: createLobbyFromLobbyData(lobbyData)
                 });
+            })
+            .catch(() => {
+                areCommandsDisabled$.next(false);
             });
     }
 }
@@ -360,9 +376,13 @@ const canStartNextQuestion$ = activeRound$.pipe(
 );
 const [useCanStartNextQuestion] = bind(canStartNextQuestion$, false);
 
-const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
+const [useAreCommandsDisabled] = bind(areCommandsDisabled$, false);
 
-const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(useActiveLobbyUsers, props);
+const ComposedCommandButton = (props: CommandButtonProps) => CommandButton(useAreCommandsDisabled, props);
+
+const MainWelcomeScreen = () => WelcomeScreen(ComposedCommandButton, createLobby, joinLobby);
+
+const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(ComposedCommandButton, useActiveLobbyUsers, props);
 
 const ComposedCountdown = (props: CountdownProps) => Countdown(window, timer, props);
 
@@ -374,9 +394,10 @@ const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundSc
     props
 );
 
-const ComposedAnswerViewer = (props: AnswerViewerProps) => AnswerViewer(window, timer, props);
+const ComposedAnswerViewer = (props: AnswerViewerProps) => AnswerViewer(ComposedCommandButton, window, timer, props);
 
 const ActivePlayerRoundScreen = (props: RoundScreenProps) => PlayerRoundScreen(
+    ComposedCommandButton,
     ComposedAnswerViewer,
     ComposedCountdown,
     useCurrentQuestion,
@@ -393,7 +414,7 @@ const MainActiveScreen = () => ActiveScreen(
     ActivePlayerRoundScreen
 );
 
-const TvQuizPartyApp = () => App(useActiveLobby, MainActiveScreen);
+const TvQuizPartyApp = () => App(ComposedCommandButton, useActiveLobby, MainActiveScreen);
 
 ReactDOM.render(
     <React.StrictMode>

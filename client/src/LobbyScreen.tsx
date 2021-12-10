@@ -1,4 +1,5 @@
 import React from 'react';
+import { CommandButtonProps } from './CommandButton';
 
 import Lobby from './Lobby';
 
@@ -7,16 +8,14 @@ export type LobbyScreenProps = {
 };
 
 function LobbyScreen(
+    CommandButton: React.FunctionComponent<CommandButtonProps>,
     useUsers: () => string[],
     { lobby } : LobbyScreenProps
 ) {
     const users = useUsers();
 
-    const [disable, setDisable] = React.useState(false);
-
     function handleStartRoundButton() {
         lobby.startRound();
-        setDisable(true);
     }
 
     return (
@@ -31,7 +30,7 @@ function LobbyScreen(
             </div>
             { lobby.isHost ?
                 <div>
-                    <button disabled={disable} onClick={handleStartRoundButton}>Start Round</button>
+                    <CommandButton onClick={handleStartRoundButton}>Start Round</CommandButton>
                 </div> :
                 <></>
             }

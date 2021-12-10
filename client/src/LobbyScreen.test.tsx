@@ -1,18 +1,22 @@
 import { BehaviorSubject } from 'rxjs';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
-import Lobby from './Lobby';
 import { MockProxy, mock } from 'jest-mock-extended';
 
+import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
+import Lobby from './Lobby';
+import { CommandButtonProps } from './CommandButton';
+
+let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let useUsers: jest.MockedFunction<() => string[]>;
 let mockLobby: MockProxy<Lobby>;
 
 function ExampleLobbyScreen(props: LobbyScreenProps) {
-    return LobbyScreen(useUsers, props);
+    return LobbyScreen(DummyCommandButton, useUsers, props);
 }
 
 beforeEach(() => {
+    DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     useUsers = jest.fn();
     useUsers.mockReturnValue([]);
     mockLobby = mock<Lobby>();
@@ -44,9 +48,9 @@ test('start button calls start round function when clicked', () => {
 
     const buttonElement = screen.getByText(/Start Round/i);
     userEvent.click(buttonElement);
+    expect(buttonElement).toHaveAttribute('data-x');
 
     expect(mockLobby.startRound).toBeCalled();
-    expect(buttonElement).toBeDisabled();
 });
 
 test('start button is only shown to lobby host', () => {
