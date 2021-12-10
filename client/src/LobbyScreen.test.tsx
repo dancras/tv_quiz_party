@@ -39,6 +39,7 @@ test('users are displayed', () => {
 });
 
 test('start button calls start round function when clicked', () => {
+    mockLobby.isHost = true;
     render(<ExampleLobbyScreen lobby={mockLobby} />);
 
     const buttonElement = screen.getByText(/Start Round/i);
@@ -46,4 +47,13 @@ test('start button calls start round function when clicked', () => {
 
     expect(mockLobby.startRound).toBeCalled();
     expect(buttonElement).toBeDisabled();
+});
+
+test('start button is only shown to lobby host', () => {
+    mockLobby.isHost = false;
+    render(<ExampleLobbyScreen lobby={mockLobby} />);
+
+    const buttonElement = screen.queryByText(/Start Round/i);
+
+    expect(buttonElement).not.toBeInTheDocument();
 });

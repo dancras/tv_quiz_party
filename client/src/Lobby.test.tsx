@@ -89,7 +89,8 @@ test('activeRound$ uses latestData to construct Round', () => {
 
     const expectedPlainRound = {
         questions: [],
-        currentQuestion: null
+        currentQuestion: null,
+        isHost: false
     };
 
     const RoundConstructor = jest.fn();

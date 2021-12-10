@@ -1,10 +1,11 @@
-import { firstValueFrom, from, of } from 'rxjs';
+import { BehaviorSubject, firstValueFrom, from, of } from 'rxjs';
 
 import Round, { CurrentQuestionMetadata, PlainRound, Question, RoundCmd } from './Round';
 
 const EMPTY_PLAIN_ROUND: PlainRound = {
     questions: [],
-    currentQuestion: null
+    currentQuestion: null,
+    isHost: false
 };
 
 let sendCommand: jest.MockedFunction<(cmd: RoundCmd) => void>;
@@ -34,11 +35,13 @@ beforeEach(() => {
 test('questions is exposed from initialData', () => {
     const initialData = {
         questions: [],
-        currentQuestion: null
+        currentQuestion: null,
+        isHost: false
     };
     const latestData = of({
         questions: [],
-        currentQuestion: null
+        currentQuestion: null,
+        isHost: false
     });
 
     const round = new Round(sendCommand, initialData, latestData);
@@ -68,7 +71,8 @@ test('currentQuestion$ combines CurrentQuestionMetadata and Question', () => {
             answerText3: '',
             correctAnswer: ''
         }],
-        currentQuestion: null
+        currentQuestion: null,
+        isHost: false
     };
     const expectedQuestion = {
         i: 0,
@@ -78,7 +82,8 @@ test('currentQuestion$ combines CurrentQuestionMetadata and Question', () => {
     const latestData = of({
         // Question data is fixed so we don't use latestData
         questions: [],
-        currentQuestion: expectedQuestion
+        currentQuestion: expectedQuestion,
+        isHost: false
     });
     const round = new Round(sendCommand, initialData, latestData);
 
@@ -115,7 +120,8 @@ test('currentQuestion$ sends latest to new subscribers', () => {
             answerText3: '',
             correctAnswer: ''
         }],
-        currentQuestion: null
+        currentQuestion: null,
+        isHost: false
     };
     const expectedQuestion = {
         i: 0,
@@ -125,11 +131,13 @@ test('currentQuestion$ sends latest to new subscribers', () => {
     const latestData = from([
         {
             questions: [],
-            currentQuestion: null
+            currentQuestion: null,
+            isHost: false
         },
         {
             questions: [],
-            currentQuestion: expectedQuestion
+            currentQuestion: expectedQuestion,
+            isHost: false
         }
     ]);
     const round = new Round(sendCommand, initialData, latestData);
@@ -142,4 +150,72 @@ test('currentQuestion$ sends latest to new subscribers', () => {
         expect(actualQuestion?.i).toEqual(expectedQuestion.i);
         expect(actualQuestion?.videoID).toEqual('example-video');
     });
+});
+
+test('canStartNextQuestion$ is true for host with null or ended currentQuestion', () => {
+
+    const initialData = {
+        questions: [],
+        currentQuestion: null,
+        isHost: true
+    };
+    const latestData = new BehaviorSubject<PlainRound>({
+        questions: [],
+        currentQuestion: null,
+        isHost: true
+    });
+
+    const round = new Round(sendCommand, initialData, latestData);
+
+    const subscribeSpy = jest.fn();
+
+    round.canStartNextQuestion$.subscribe(subscribeSpy);
+
+    expect(subscribeSpy).toBeCalledWith(true);
+    subscribeSpy.mockClear();
+
+    latestData.next({
+        questions: [],
+        currentQuestion: createCurrentQuestion({
+            hasEnded: false
+        }),
+        isHost: true
+    });
+
+    expect(subscribeSpy).toBeCalledWith(false);
+    subscribeSpy.mockClear();
+
+    latestData.next({
+        questions: [],
+        currentQuestion: createCurrentQuestion({
+            hasEnded: true
+        }),
+        isHost: true
+    });
+
+    expect(subscribeSpy).toBeCalledWith(true);
+    subscribeSpy.mockClear();
+
+});
+
+test('canStartNextQuestion$ is false for non-host', () => {
+
+    const initialData = {
+        questions: [],
+        currentQuestion: null,
+        isHost: false
+    };
+    const latestData = of({
+        questions: [],
+        currentQuestion: null,
+        isHost: false
+    });
+
+    const round = new Round(sendCommand, initialData, latestData);
+
+    const subscribeSpy = jest.fn();
+
+    round.canStartNextQuestion$.subscribe(subscribeSpy);
+
+    expect(subscribeSpy).toBeCalledWith(false);
 });

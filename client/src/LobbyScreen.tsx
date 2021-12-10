@@ -29,9 +29,12 @@ function LobbyScreen(
                     <div key={userID}>{userID}</div>
                 )}
             </div>
-            <div>
-                <button disabled={disable} onClick={handleStartRoundButton}>Start Round</button>
-            </div>
+            { lobby.isHost ?
+                <div>
+                    <button disabled={disable} onClick={handleStartRoundButton}>Start Round</button>
+                </div> :
+                <></>
+            }
         </div>
     );
 }

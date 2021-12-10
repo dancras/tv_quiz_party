@@ -6,7 +6,8 @@ export type RoundCmd =
 
 export type PlainRound = {
     questions: Question[],
-    currentQuestion: CurrentQuestionMetadata | null
+    currentQuestion: CurrentQuestionMetadata | null,
+    isHost: boolean
 };
 
 export type Seconds = number;
@@ -35,6 +36,7 @@ export class Round {
     private _sendCmd: (cmd: RoundCmd) => void;
     questions: Question[];
     currentQuestion$: Observable<(CurrentQuestionMetadata & Question | null)>;
+    canStartNextQuestion$: Observable<boolean>;
 
     constructor(
         sendCmd: (cmd: RoundCmd) => void,
@@ -49,6 +51,10 @@ export class Round {
                 null
             ),
             shareReplay(1)
+        );
+
+        this.canStartNextQuestion$ = latestData.pipe(
+            map(x => initialData.isHost && (!x.currentQuestion || x.currentQuestion.hasEnded))
         );
     }
 

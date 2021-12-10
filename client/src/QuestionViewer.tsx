@@ -46,8 +46,6 @@ function QuestionViewer(
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const dumpQuestion = JSON.stringify(question, undefined, 2);
-
     const opts = {
         playerVars: {
             autoplay: 0 as 0,
@@ -65,7 +63,6 @@ function QuestionViewer(
         <div>
             <YouTube videoId={question.videoID} opts={opts} onReady={onReady} />
             <Countdown endsAt={question.startTime} />
-            <div>{dumpQuestion}</div>
         </div>
     );
 }

@@ -106,10 +106,15 @@ stateEvents$.pipe(
                     state.activeLobby.isHost = state.userID === state.activeLobby.hostID;
                 }
 
+                if (state.activeLobby?.activeRound) {
+                    state.activeLobby.activeRound.isHost = state.userID === state.activeLobby.hostID;
+                }
+
                 return state;
             case 'ACTIVE_ROUND_UPDATED':
                 if (state.activeLobby) {
                     state.activeLobby.activeRound = stateEvent.data;
+                    state.activeLobby.activeRound.isHost = state.userID === state.activeLobby.hostID;
                 }
                 return state;
             case 'CURRENT_QUESTION_UPDATED':
@@ -217,7 +222,8 @@ function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
 function createRoundFromRoundData(roundData: any): PlainRound {
     return {
         questions: roundData['questions'].map(createQuestionFromQuestionData),
-        currentQuestion: roundData['current_question'] ? createCurrentQuestionMetadata(roundData['current_question']) : null
+        currentQuestion: roundData['current_question'] ? createCurrentQuestionMetadata(roundData['current_question']) : null,
+        isHost: false
     };
 }
 
@@ -349,8 +355,9 @@ const currentQuestion$ = activeRound$.pipe(
 );
 const [useCurrentQuestion] = bind(currentQuestion$, null);
 
-// TODO implement this on Round
-const canStartNextQuestion$ = of(true);
+const canStartNextQuestion$ = activeRound$.pipe(
+    switchMap(round => round ? round.canStartNextQuestion$ : of(false))
+);
 const [useCanStartNextQuestion] = bind(canStartNextQuestion$, false);
 
 const MainWelcomeScreen = () => WelcomeScreen(createLobby, joinLobby);
