@@ -107,6 +107,51 @@ test('it disables answering at answerLockTime', () => {
     expect(mockRound.answerQuestion).not.toHaveBeenCalled();
 });
 
+test('it calls endQuestion at answerLockTime if question has not ended', () => {
+    const animate = createTestDirector(mockAnimator);
+    const question = createCurrentQuestion({
+        startTime: 10000,
+        questionStartTime: 10,
+        answerLockTime: 30,
+        hasEnded: false
+    });
+
+    render(<ExampleAnswerViewer round={mockRound} question={question} />);
+
+    mockTimer.now.mockReturnValue(29999);
+    act(() => {
+        animate();
+    });
+
+    expect(mockRound.endQuestion).not.toHaveBeenCalled();
+
+    mockTimer.now.mockReturnValue(30000);
+    act(() => {
+        animate();
+    });
+
+    expect(mockRound.endQuestion).toHaveBeenCalled();
+});
+
+test('it does not call endQuestion if question has ended', () => {
+    const animate = createTestDirector(mockAnimator);
+    const question = createCurrentQuestion({
+        startTime: 10000,
+        questionStartTime: 10,
+        answerLockTime: 30,
+        hasEnded: true
+    });
+
+    render(<ExampleAnswerViewer round={mockRound} question={question} />);
+
+    mockTimer.now.mockReturnValue(30000);
+    act(() => {
+        animate();
+    });
+
+    expect(mockRound.endQuestion).not.toHaveBeenCalled();
+});
+
 test('it reveals answer at answerRevealTime', () => {
     const animate = createTestDirector(mockAnimator);
     const question = createCurrentQuestion({

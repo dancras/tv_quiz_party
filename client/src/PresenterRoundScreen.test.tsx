@@ -1,12 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import { mock } from 'jest-mock-extended';
 
-import Round, { CurrentQuestionMetadata, Question } from './Round';
+import Round, { CurrentQuestion } from './Round';
 import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
 import { QuestionViewerProps } from './QuestionViewer';
 
+import { createCurrentQuestion } from './Round.test';
+
 let DummyQuestionViewer: React.FunctionComponent<QuestionViewerProps>;
-let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestionMetadata & Question | null>;
+let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestion | null>;
 
 function ExamplePresenterRoundScreen(
     props : RoundScreenProps
@@ -27,21 +29,7 @@ beforeEach(() => {
 
 test('QuestionViewer is shown for current question data', () => {
     const mockRound = mock<Round>();
-    useCurrentQuestion.mockReturnValue({
-        i: 0,
-        hasEnded: true,
-        videoID: '',
-        startTime: 0,
-        questionStartTime: 0,
-        questionDisplayTime: 0,
-        answerLockTime: 0,
-        answerRevealTime: 0,
-        endTime: 0,
-        answerText1: '',
-        answerText2: '',
-        answerText3: '',
-        correctAnswer: ''
-    });
+    useCurrentQuestion.mockReturnValue(createCurrentQuestion());
 
     render(<ExamplePresenterRoundScreen round={mockRound} />);
 

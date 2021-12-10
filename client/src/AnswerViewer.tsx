@@ -2,11 +2,15 @@ import React, { useEffect } from 'react';
 import { CommandButtonProps } from './CommandButton';
 import { Animator } from './lib/Animator';
 import { Timer } from './lib/Timer';
-import Round, { CurrentQuestionMetadata, Question } from './Round';
+import Round, { CurrentQuestion } from './Round';
 
 export type AnswerViewerProps = {
-    question: CurrentQuestionMetadata & Question,
+    question: CurrentQuestion,
     round: Round
+}
+
+function calculateNow(question: CurrentQuestion, timer: Timer): number {
+    return question.questionStartTime + ((timer.now() - question.startTime) / 1000);
 }
 
 function AnswerViewer(
@@ -17,16 +21,17 @@ function AnswerViewer(
 ) {
     const [disable, setDisable] = React.useState(false);
     const [selectedAnswer, setSelectedAnswer] = React.useState<string | null>(null);
-    const [now, setNow] = React.useState(question.questionStartTime + ((timer.now() - question.startTime) / 1000));
+    const [now, setNow] = React.useState(calculateNow(question, timer));
 
     const animateRef = React.useRef<number | null>(null);
 
     function animate() {
-        const now = question.questionStartTime + ((timer.now() - question.startTime) / 1000);
+        const now = calculateNow(question, timer);
         setNow(now);
 
         if (now >= question.answerLockTime) {
             setDisable(true);
+            question.hasEnded$.subscribe(hasEnded => hasEnded ? void(0) : round.endQuestion()).unsubscribe();
         }
     };
 

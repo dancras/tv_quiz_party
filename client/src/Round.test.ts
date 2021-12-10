@@ -1,6 +1,13 @@
 import { BehaviorSubject, firstValueFrom, from, of } from 'rxjs';
 
-import Round, { CurrentQuestionMetadata, PlainRound, Question, RoundCmd } from './Round';
+import Round, {
+    CurrentQuestion,
+    PlainCurrentQuestion,
+    PlainCurrentQuestionMetadata,
+    PlainRound,
+    Question,
+    RoundCmd
+} from './Round';
 
 const EMPTY_PLAIN_ROUND: PlainRound = {
     questions: [],
@@ -10,11 +17,8 @@ const EMPTY_PLAIN_ROUND: PlainRound = {
 
 let sendCommand: jest.MockedFunction<(cmd: RoundCmd) => void>;
 
-export function createCurrentQuestion(fieldsUnderTest?: Partial<CurrentQuestionMetadata & Question>): CurrentQuestionMetadata & Question {
+function createQuestion(fieldsUnderTest?: Partial<Question>): Question {
     return Object.assign({
-        i: 0,
-        startTime: 0,
-        hasEnded: false,
         videoID: '',
         questionStartTime: 0,
         questionDisplayTime: 0,
@@ -26,6 +30,33 @@ export function createCurrentQuestion(fieldsUnderTest?: Partial<CurrentQuestionM
         answerText3: '',
         correctAnswer: ''
     }, fieldsUnderTest);
+}
+
+function createPlainCurrentQuestionMetadata(fieldsUnderTest?: Partial<PlainCurrentQuestionMetadata>): PlainCurrentQuestionMetadata {
+    return Object.assign({
+        i: 0,
+        startTime: 0,
+        hasEnded: false,
+    }, fieldsUnderTest);
+}
+
+function createPlainCurrentQuestion(fieldsUnderTest?: Partial<PlainCurrentQuestionMetadata>): PlainCurrentQuestion {
+    return Object.assign(
+        createQuestion(),
+        createPlainCurrentQuestionMetadata(),
+        fieldsUnderTest
+    );
+}
+
+export function createCurrentQuestion(fieldsUnderTest?: Partial<PlainCurrentQuestion>): CurrentQuestion {
+    return Object.assign(
+        createQuestion(),
+        createPlainCurrentQuestionMetadata(),
+        {
+            hasEnded$: of(fieldsUnderTest?.hasEnded || false),
+        },
+        fieldsUnderTest
+    );
 }
 
 beforeEach(() => {
@@ -88,9 +119,8 @@ test('currentQuestion$ combines CurrentQuestionMetadata and Question', () => {
     const round = new Round(sendCommand, initialData, latestData);
 
     return firstValueFrom(round.currentQuestion$).then((actualQuestion) => {
-        expect(actualQuestion).toEqual({
+        expect(actualQuestion).toEqual(expect.objectContaining({
             i: 0,
-            hasEnded: true,
             videoID: 'example-video',
             startTime: 10,
             questionStartTime: 1,
@@ -102,7 +132,11 @@ test('currentQuestion$ combines CurrentQuestionMetadata and Question', () => {
             answerText2: '',
             answerText3: '',
             correctAnswer: ''
-        });
+        }));
+
+        return actualQuestion && firstValueFrom(actualQuestion.hasEnded$);
+    }).then((actualHasEnded) => {
+        expect(actualHasEnded).toEqual(true);
     });
 });
 
@@ -152,6 +186,39 @@ test('currentQuestion$ sends latest to new subscribers', () => {
     });
 });
 
+test('currentQuestion$ does not send update if question index is the same', () => {
+    const initialData = {
+        questions: [createQuestion()],
+        currentQuestion: null,
+        isHost: false
+    };
+    const latestData = from([
+        {
+            questions: [],
+            currentQuestion: createPlainCurrentQuestion({
+                i: 0,
+                hasEnded: false
+            }),
+            isHost: false
+        },
+        {
+            questions: [],
+            currentQuestion: createPlainCurrentQuestion({
+                i: 0,
+                hasEnded: true
+            }),
+            isHost: false
+        }
+    ]);
+    const round = new Round(sendCommand, initialData, latestData);
+
+    const subscribeSpy = jest.fn();
+
+    round.currentQuestion$.subscribe(subscribeSpy);
+
+    expect(subscribeSpy).toBeCalledTimes(1);
+});
+
 test('canStartNextQuestion$ is true for host with null or ended currentQuestion', () => {
 
     const initialData = {
@@ -176,7 +243,7 @@ test('canStartNextQuestion$ is true for host with null or ended currentQuestion'
 
     latestData.next({
         questions: [],
-        currentQuestion: createCurrentQuestion({
+        currentQuestion: createPlainCurrentQuestion({
             hasEnded: false
         }),
         isHost: true
@@ -187,7 +254,7 @@ test('canStartNextQuestion$ is true for host with null or ended currentQuestion'
 
     latestData.next({
         questions: [],
-        currentQuestion: createCurrentQuestion({
+        currentQuestion: createPlainCurrentQuestion({
             hasEnded: true
         }),
         isHost: true

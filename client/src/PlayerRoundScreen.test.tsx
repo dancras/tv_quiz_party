@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { mock } from 'jest-mock-extended';
 
 import { CommandButtonProps } from './CommandButton';
-import Round, { CurrentQuestionMetadata, Question } from './Round';
+import Round, { CurrentQuestion } from './Round';
 import { RoundScreenProps } from './PresenterRoundScreen';
 import PlayerRoundScreen from './PlayerRoundScreen';
 import { CountdownProps } from './Countdown';
@@ -14,7 +14,7 @@ import { AnswerViewerProps } from './AnswerViewer';
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let MockAnswerViewer: jest.MockedFunction<React.FunctionComponent<AnswerViewerProps>>;
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
-let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestionMetadata & Question | null>;
+let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestion | null>;
 let useCanStartNextQuestion: jest.MockedFunction<() => boolean>;
 
 function ExamplePlayerRoundScreen(

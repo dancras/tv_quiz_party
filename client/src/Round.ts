@@ -1,12 +1,12 @@
 import { Observable } from 'rxjs';
-import { map, shareReplay } from 'rxjs/operators';
+import { distinctUntilChanged, map, shareReplay } from 'rxjs/operators';
 
 export type RoundCmd =
     { cmd: 'StartNextQuestion' }
 
 export type PlainRound = {
     questions: Question[],
-    currentQuestion: CurrentQuestionMetadata | null,
+    currentQuestion: PlainCurrentQuestionMetadata | null,
     isHost: boolean
 };
 
@@ -26,16 +26,26 @@ export type Question = {
     correctAnswer: string
 };
 
-export type CurrentQuestionMetadata = {
+export type PlainCurrentQuestionMetadata = {
     i: number,
     startTime: Milliseconds,
     hasEnded: boolean
 }
 
+export type PlainCurrentQuestion = PlainCurrentQuestionMetadata & Question;
+
+export type CurrentQuestionMetadata = {
+    i: number,
+    startTime: Milliseconds,
+    hasEnded$: Observable<boolean>
+}
+
+export type CurrentQuestion = CurrentQuestionMetadata & Question;
+
 export class Round {
     private _sendCmd: (cmd: RoundCmd) => void;
     questions: Question[];
-    currentQuestion$: Observable<(CurrentQuestionMetadata & Question | null)>;
+    currentQuestion$: Observable<(CurrentQuestion | null)>;
     canStartNextQuestion$: Observable<boolean>;
 
     constructor(
@@ -45,11 +55,18 @@ export class Round {
     ) {
         this._sendCmd = sendCmd;
         this.questions = initialData.questions;
+
+        const hasCurrentQuestionEnded$ = latestData.pipe(
+            map(x => x.currentQuestion ? x.currentQuestion.hasEnded : true)
+        );
         this.currentQuestion$ = latestData.pipe(
             map(x => x.currentQuestion ?
-                Object.assign({}, x.currentQuestion, initialData.questions[x.currentQuestion.i]) :
+                Object.assign({}, x.currentQuestion, initialData.questions[x.currentQuestion.i], {
+                    hasEnded$: hasCurrentQuestionEnded$
+                }) :
                 null
             ),
+            distinctUntilChanged((previous, next) => previous?.i === next?.i),
             shareReplay(1)
         );
 
@@ -63,6 +80,9 @@ export class Round {
     }
 
     answerQuestion(answer: string) {
+    }
+
+    endQuestion() {
     }
 };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { QuestionViewerProps } from './QuestionViewer';
-import { CurrentQuestionMetadata, Question, Round } from './Round';
+import { CurrentQuestion, Round } from './Round';
 
 export type RoundScreenProps = {
     round: Round
@@ -8,7 +8,7 @@ export type RoundScreenProps = {
 
 function PresenterRoundScreen(
     QuestionViewer: React.FunctionComponent<QuestionViewerProps>,
-    useCurrentQuestion: () => CurrentQuestionMetadata & Question | null,
+    useCurrentQuestion: () => CurrentQuestion | null,
     { round } : RoundScreenProps
 ) {
     const currentQuestion = useCurrentQuestion();

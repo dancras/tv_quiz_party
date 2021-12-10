@@ -13,7 +13,7 @@ import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
 import { setupActiveLobby } from './ActiveLobby';
 import { PlainLobby, LobbyCmd } from './Lobby';
-import { CurrentQuestionMetadata, PlainRound, Question } from './Round';
+import { PlainCurrentQuestionMetadata, PlainRound, Question } from './Round';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
@@ -61,7 +61,7 @@ function setupLobbyWebSocket(id: string) {
             case 'QUESTION_STARTED':
                 stateEvents$.next({
                     code: 'CURRENT_QUESTION_UPDATED',
-                    data: createCurrentQuestionMetadata(message.data)
+                    data: createPlainCurrentQuestionMetadata(message.data)
                 });
                 break;
         }
@@ -85,7 +85,7 @@ type AppStateEvent =
     { code: 'USER_ID_SET', data: string } |
     { code: 'ACTIVE_LOBBY_UPDATED', data: PlainLobby | null } |
     { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound } |
-    { code: 'CURRENT_QUESTION_UPDATED', data: CurrentQuestionMetadata };
+    { code: 'CURRENT_QUESTION_UPDATED', data: PlainCurrentQuestionMetadata };
 
 const areCommandsDisabled$ = new BehaviorSubject(false);
 
@@ -230,12 +230,12 @@ function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
 function createRoundFromRoundData(roundData: any): PlainRound {
     return {
         questions: roundData['questions'].map(createQuestionFromQuestionData),
-        currentQuestion: roundData['current_question'] ? createCurrentQuestionMetadata(roundData['current_question']) : null,
+        currentQuestion: roundData['current_question'] ? createPlainCurrentQuestionMetadata(roundData['current_question']) : null,
         isHost: false
     };
 }
 
-function createCurrentQuestionMetadata(currentQuestionData: any): CurrentQuestionMetadata {
+function createPlainCurrentQuestionMetadata(currentQuestionData: any): PlainCurrentQuestionMetadata {
     return {
         i: currentQuestionData['i'],
         startTime: currentQuestionData['start_time'] * 1000,

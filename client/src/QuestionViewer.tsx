@@ -4,12 +4,12 @@ import { YouTubeProps } from 'react-youtube';
 import { Animator } from './lib/Animator';
 import { Timer } from './lib/Timer';
 
-import { CurrentQuestionMetadata, Question } from './Round';
+import { CurrentQuestion } from './Round';
 
 import { CountdownProps } from './Countdown';
 
 export type QuestionViewerProps = {
-    question: CurrentQuestionMetadata & Question
+    question: CurrentQuestion
 }
 
 function QuestionViewer(
