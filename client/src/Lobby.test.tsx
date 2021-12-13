@@ -1,7 +1,7 @@
 import { from, of } from 'rxjs';
 import Lobby, { LobbyCmd, PlainLobby } from './Lobby';
 
-function createPlainLobby(fieldsUnderTest?: Partial<PlainLobby>): PlainLobby {
+export function createPlainLobby(fieldsUnderTest?: Partial<PlainLobby>): PlainLobby {
     return Object.assign({
         id: '',
         hostID: '',

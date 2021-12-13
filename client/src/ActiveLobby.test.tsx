@@ -2,6 +2,8 @@ import { firstValueFrom, from, lastValueFrom, of } from 'rxjs';
 import { setupActiveLobby } from './ActiveLobby';
 import Lobby, { LobbyCmd } from './Lobby';
 
+import { createPlainLobby } from './Lobby.test';
+
 test('null values are passed through from latest', () => {
     const latest = of(null);
     const activeLobby$ = setupActiveLobby(jest.fn(), latest);
@@ -13,12 +15,10 @@ test('null values are passed through from latest', () => {
 });
 
 test('created Lobby instances have correct initial data', () => {
-    const plainLobby = {
+    const plainLobby = createPlainLobby({
         id: 'lobby-id',
-        joinCode: 'lobby-join-code',
-        users: [],
-        activeRound: null
-    };
+        joinCode: 'lobby-join-code'
+    });
     const latest = of(plainLobby);
     const activeLobby$ = setupActiveLobby(jest.fn(), latest);
 
@@ -32,18 +32,14 @@ test('created Lobby instances have correct initial data', () => {
 });
 
 test('no new Lobby instance is emit if the id has not changed', () => {
-    const plainLobby = {
+    const plainLobby = createPlainLobby({
         id: 'lobby-id',
-        joinCode: 'lobby-join-code',
         users: [],
-        activeRound: null
-    };
-    const plainLobby_update = {
+    });
+    const plainLobby_update = createPlainLobby({
         id: 'lobby-id',
-        joinCode: 'lobby-join-code',
-        users: ['user-1'],
-        activeRound: null
-    };
+        users: [],
+    });
     const latest = from([
         plainLobby,
         plainLobby_update
@@ -57,12 +53,10 @@ test('no new Lobby instance is emit if the id has not changed', () => {
 });
 
 test('created Lobby instances have correct latest data', () => {
-    const plainLobby = {
+    const plainLobby = createPlainLobby({
         id: 'lobby-id',
-        joinCode: 'lobby-join-code',
         users: ['user-1'],
-        activeRound: null
-    };
+    });
     const latest = of(plainLobby);
     const activeLobby$ = setupActiveLobby(jest.fn(), latest);
 
@@ -74,30 +68,22 @@ test('created Lobby instances have correct latest data', () => {
 });
 
 test('adjacent lobby data does not leak into previous Lobby instances', () => {
-    const plainLobby1 = {
+    const plainLobby1 = createPlainLobby({
         id: 'lobby-id-1',
-        joinCode: 'lobby-join-code',
         users: ['lobby-1-user'],
-        activeRound: null
-    };
-    const plainLobby2 = {
+    });
+    const plainLobby2 = createPlainLobby({
         id: 'lobby-id-2',
-        joinCode: 'lobby-join-code',
         users: [''],
-        activeRound: null
-    };
-    const plainLobby2_update = {
+    });
+    const plainLobby2_update = createPlainLobby({
         id: 'lobby-id-2',
-        joinCode: 'lobby-join-code',
         users: ['lobby-2-user'],
-        activeRound: null
-    };
-    const plainLobby3 = {
+    });
+    const plainLobby3 = createPlainLobby({
         id: 'lobby-id-3',
-        joinCode: 'lobby-join-code',
         users: ['lobby-3-user'],
-        activeRound: null
-    };
+    });
     const latest = from([
         plainLobby1,
         plainLobby2,
@@ -117,12 +103,7 @@ test('adjacent lobby data does not leak into previous Lobby instances', () => {
 });
 
 test('created Lobby instances are passed command bus', () => {
-    const plainLobby = {
-        id: 'lobby-id',
-        joinCode: 'lobby-join-code',
-        users: [],
-        activeRound: null
-    };
+    const plainLobby = createPlainLobby();
     const sendCmdSpy = jest.fn();
     const latest = of(plainLobby);
     const activeLobby$ = setupActiveLobby(sendCmdSpy, latest);
