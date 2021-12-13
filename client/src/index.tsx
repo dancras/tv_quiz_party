@@ -23,6 +23,15 @@ import Countdown, { CountdownProps } from './Countdown';
 import { Timer } from './lib/Timer';
 import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 import CommandButton, { CommandButtonProps } from './CommandButton';
+import { handleAppStateEvent, setupAppState } from './AppState';
+
+const areCommandsDisabled$ = new BehaviorSubject(false);
+
+const [state$, stateEvents$] = setupAppState(handleAppStateEvent);
+
+state$.subscribe((state) => {
+    areCommandsDisabled$.next(false);
+});
 
 function setupLobbyWebSocket(id: string) {
     const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
@@ -76,61 +85,6 @@ type ServerMessage =
     { code: 'LOBBY_CLOSED', data: null } |
     { code: 'ROUND_STARTED', data: any } |
     { code: 'QUESTION_STARTED', data: any };
-
-type AppState = {
-    userID: string,
-    activeLobby: PlainLobby | null
-};
-type AppStateEvent =
-    { code: 'USER_ID_SET', data: string } |
-    { code: 'ACTIVE_LOBBY_UPDATED', data: PlainLobby | null } |
-    { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound } |
-    { code: 'CURRENT_QUESTION_UPDATED', data: PlainCurrentQuestionMetadata };
-
-const areCommandsDisabled$ = new BehaviorSubject(false);
-
-const stateEvents$ = new Subject<AppStateEvent>();
-const state$ = new BehaviorSubject<AppState>({
-    userID: '',
-    activeLobby: null
-});
-
-stateEvents$.pipe(
-    withLatestFrom(state$),
-    map(([stateEvent, state]) => {
-        switch (stateEvent.code) {
-            case 'USER_ID_SET':
-                state.userID = stateEvent.data;
-                return state;
-            case 'ACTIVE_LOBBY_UPDATED':
-                state.activeLobby = stateEvent.data;
-
-                if (state.activeLobby) {
-                    state.activeLobby.isHost = state.userID === state.activeLobby.hostID;
-                }
-
-                if (state.activeLobby?.activeRound) {
-                    state.activeLobby.activeRound.isHost = state.userID === state.activeLobby.hostID;
-                }
-
-                return state;
-            case 'ACTIVE_ROUND_UPDATED':
-                if (state.activeLobby) {
-                    state.activeLobby.activeRound = stateEvent.data;
-                    state.activeLobby.activeRound.isHost = state.userID === state.activeLobby.hostID;
-                }
-                return state;
-            case 'CURRENT_QUESTION_UPDATED':
-                if (state.activeLobby && state.activeLobby.activeRound) {
-                    state.activeLobby.activeRound.currentQuestion = stateEvent.data;
-                }
-                return state;
-        }
-    })
-).subscribe((nextState) => {
-    state$.next(nextState);
-    areCommandsDisabled$.next(false);
-});
 
 type AppCmd = LobbyCmd;
 const cmds$ = new Subject<AppCmd>();
