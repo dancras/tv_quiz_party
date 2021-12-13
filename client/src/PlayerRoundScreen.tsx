@@ -20,12 +20,16 @@ function PlayerRoundScreen(
         round.startNextQuestion();
     }
 
+    function key(prefix: string): string {
+        return prefix + currentQuestion?.i;
+    }
+
     return (
         <div>
             { currentQuestion ?
                 <>
-                    <Countdown key={currentQuestion.i} endsAt={currentQuestion.startTime}></Countdown>
-                    <AnswerViewer key={currentQuestion.i} round={round} question={currentQuestion}></AnswerViewer>
+                    <Countdown key={key('Countdown')} endsAt={currentQuestion.startTime}></Countdown>
+                    <AnswerViewer key={key('AnswerViewer')} round={round} question={currentQuestion}></AnswerViewer>
                 </>:
                 <div>Waiting for host to start...</div>
 
