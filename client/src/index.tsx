@@ -8,13 +8,12 @@ import './index.css';
 
 import YouTube from 'react-youtube';
 
-import { post, subscribeToServer } from './lib/Request';
+import { post } from './lib/Request';
 import App from './App';
 import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
 import { setupActiveLobby } from './ActiveLobby';
-import { PlainLobby, LobbyCmd } from './Lobby';
-import { PlainCurrentQuestionMetadata, PlainRound, Question } from './Round';
+import { LobbyCmd } from './Lobby';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
@@ -25,6 +24,7 @@ import { Timer } from './lib/Timer';
 import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 import CommandButton, { CommandButtonProps } from './CommandButton';
 import { handleAppStateEvent, setupAppState } from './AppState';
+import { createLobby, doHandshake, joinLobby, setupLobbyWebSocket } from './Service';
 
 const areCommandsDisabled$ = new BehaviorSubject(false);
 
@@ -33,47 +33,6 @@ const [state$, stateEvents$] = setupAppState(handleAppStateEvent);
 state$.subscribe((state) => {
     areCommandsDisabled$.next(false);
 });
-
-function setupLobbyWebSocket(id: string) {
-    return subscribeToServer(`/api/lobby/${id}/ws`, (event) => {
-        const message = JSON.parse(event.data) as ServerMessage;
-
-        switch (message.code) {
-            case 'USER_JOINED':
-            case 'USER_EXITED':
-                stateEvents$.next({
-                    code: 'ACTIVE_LOBBY_UPDATED',
-                    data: createLobbyFromLobbyData(message.data.lobby)
-                });
-                break;
-            case 'LOBBY_CLOSED':
-                stateEvents$.next({
-                    code: 'ACTIVE_LOBBY_UPDATED',
-                    data: null
-                });
-                break;
-            case 'ROUND_STARTED':
-                stateEvents$.next({
-                    code: 'ACTIVE_ROUND_UPDATED',
-                    data: createRoundFromRoundData(message.data)
-                });
-                break;
-            case 'QUESTION_STARTED':
-                stateEvents$.next({
-                    code: 'CURRENT_QUESTION_UPDATED',
-                    data: createPlainCurrentQuestionMetadata(message.data)
-                });
-                break;
-        }
-    });
-}
-
-type ServerMessage =
-    { code: 'USER_JOINED', data: any } |
-    { code: 'USER_EXITED', data: any } |
-    { code: 'LOBBY_CLOSED', data: null } |
-    { code: 'ROUND_STARTED', data: any } |
-    { code: 'QUESTION_STARTED', data: any };
 
 type AppCmd = LobbyCmd;
 const cmds$ = new Subject<AppCmd>();
@@ -169,53 +128,10 @@ let closeSocket: (() => void) | undefined;
 activeLobby$.subscribe(activeLobby => {
     if (closeSocket) closeSocket();
     if (activeLobby) {
-        const socket = setupLobbyWebSocket(activeLobby.id);
+        const socket = setupLobbyWebSocket(stateEvents$, activeLobby.id);
         closeSocket = socket.close.bind(socket);
     }
 });
-
-function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
-    return {
-        id: lobbyData['id'] as string,
-        hostID: lobbyData['host_id'] as string,
-        joinCode: lobbyData['join_code'] as string,
-        users: lobbyData['users'],
-        activeRound: lobbyData['round'] && createRoundFromRoundData(lobbyData['round']),
-        isHost: false,
-        isPresenter: false
-    };
-}
-
-function createRoundFromRoundData(roundData: any): PlainRound {
-    return {
-        questions: roundData['questions'].map(createQuestionFromQuestionData),
-        currentQuestion: roundData['current_question'] ? createPlainCurrentQuestionMetadata(roundData['current_question']) : null,
-        isHost: false
-    };
-}
-
-function createPlainCurrentQuestionMetadata(currentQuestionData: any): PlainCurrentQuestionMetadata {
-    return {
-        i: currentQuestionData['i'],
-        startTime: currentQuestionData['start_time'] * 1000,
-        hasEnded: currentQuestionData['has_ended']
-    };
-}
-
-function createQuestionFromQuestionData(questionData: any): Question {
-    return {
-        videoID: questionData['video_id'] as string,
-        questionStartTime: questionData['start_time'] as number,
-        questionDisplayTime: questionData['question_display_time'] as number,
-        answerLockTime: questionData['answer_lock_time'] as number,
-        answerRevealTime: questionData['answer_reveal_time'] as number,
-        endTime: questionData['end_time'] as number,
-        answerText1: questionData['answer_text_1'] as string,
-        answerText2: questionData['answer_text_2'] as string,
-        answerText3: questionData['answer_text_3'] as string,
-        correctAnswer: questionData['correct_answer'] as string,
-    };
-}
 
 let timeOffset = 0;
 const timer: Timer = {
@@ -224,76 +140,19 @@ const timer: Timer = {
     }
 };
 
-const handshakeSendTime = Date.now();
-const handshake = post('/api/handshake')
-    .then(x => x.json())
-    .then((handshakeData) => {
-        const handshakeReceivedTime = Date.now();
-        const serverTime = handshakeData['utc_time'] * 1000;
-        const sendTime = serverTime - handshakeSendTime;
-        const receiveTime = handshakeReceivedTime - serverTime;
-        timeOffset = sendTime - ((sendTime + receiveTime) / 2);
+doHandshake().then(handshakeData => {
+    timeOffset = handshakeData.timeOffset;
 
-        const lobbyData = handshakeData['active_lobby'];
-
-        stateEvents$.next({
-            code: 'USER_ID_SET',
-            data: handshakeData['user_id']
-        });
-
-        stateEvents$.next({
-            code: 'ACTIVE_LOBBY_UPDATED',
-            data: lobbyData ? createLobbyFromLobbyData(lobbyData) : null
-        });
+    stateEvents$.next({
+        code: 'USER_ID_SET',
+        data: handshakeData.userID
     });
 
-function createLobby() {
-
-    areCommandsDisabled$.next(true);
-
-    handshake
-        .then(() => post('/api/create_lobby'))
-        .then(response => response.json())
-        .then((lobbyData) => {
-            stateEvents$.next({
-                code: 'ACTIVE_LOBBY_UPDATED',
-                data: createLobbyFromLobbyData(lobbyData)
-            });
-        });
-}
-
-function joinLobby(joinCode: string, presenter?: boolean) {
-
-    areCommandsDisabled$.next(true);
-
-    if (presenter) {
-        fetch(`/api/get_lobby/${joinCode}`)
-            .then(response => response.json())
-            .then((lobbyData) => {
-                const lobby = createLobbyFromLobbyData(lobbyData);
-                lobby.isPresenter = true;
-
-                stateEvents$.next({
-                    code: 'ACTIVE_LOBBY_UPDATED',
-                    data: lobby
-                });
-            });
-    } else {
-        post('/api/join_lobby', {
-                join_code: joinCode
-            })
-            .then(response => response.json())
-            .then((lobbyData) => {
-                stateEvents$.next({
-                    code: 'ACTIVE_LOBBY_UPDATED',
-                    data: createLobbyFromLobbyData(lobbyData)
-                });
-            })
-            .catch(() => {
-                areCommandsDisabled$.next(false);
-            });
-    }
-}
+    stateEvents$.next({
+        code: 'ACTIVE_LOBBY_UPDATED',
+        data: handshakeData.activeLobby
+    });
+});
 
 // TODO reimplement this fix with the new code
 // activeLobby.value$ has a default of null so we need to wait for the
@@ -329,7 +188,19 @@ const [useAreCommandsDisabled] = bind(areCommandsDisabled$, false);
 
 const ComposedCommandButton = (props: CommandButtonProps) => CommandButton(useAreCommandsDisabled, props);
 
-const MainWelcomeScreen = () => WelcomeScreen(ComposedCommandButton, createLobby, joinLobby);
+function disableCommandsDuring<T extends unknown[]>(innerFn: (...args: T) => Promise<any>): (...args: T) => void {
+    return (...args) => {
+        areCommandsDisabled$.next(true);
+        innerFn(...args)
+            .catch(() => areCommandsDisabled$.next(false));
+    };
+}
+
+const MainWelcomeScreen = () => WelcomeScreen(
+    ComposedCommandButton,
+    disableCommandsDuring(() => createLobby(stateEvents$)),
+    disableCommandsDuring((joinCode: string, presenter?: boolean) => joinLobby(stateEvents$, joinCode, presenter))
+);
 
 const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(ComposedCommandButton, useActiveLobbyUsers, props);
 
