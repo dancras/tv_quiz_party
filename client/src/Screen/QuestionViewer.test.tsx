@@ -3,8 +3,8 @@ import { MockProxy, mock } from 'jest-mock-extended';
 import { act } from 'react-dom/test-utils';
 import { CountdownProps } from '../Component/Countdown';
 
-import { Animator, createTestDirector } from '../lib/Animator';
-import { Timer } from '../lib/Timer';
+import { Animator, createTestDirector } from '../Lib/Animator';
+import { Timer } from '../Lib/Timer';
 
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 

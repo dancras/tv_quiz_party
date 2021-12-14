@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { YouTubeProps } from 'react-youtube';
 
-import { Animator } from '../lib/Animator';
-import { Timer } from '../lib/Timer';
+import { Animator } from '../Lib/Animator';
+import { Timer } from '../Lib/Timer';
 
 import { CurrentQuestion } from '../Model/Round';
 

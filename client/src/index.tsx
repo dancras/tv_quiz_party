@@ -4,7 +4,7 @@ import './index.css';
 import reportWebVitals from './reportWebVitals';
 
 import { doHandshake } from './Service';
-import { composeApp } from './composition';
+import { composeApp } from './Composition';
 
 doHandshake().then(handshakeData => {
     const TvQuizPartyApp = composeApp(handshakeData);

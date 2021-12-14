@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { Animator } from '../lib/Animator';
-import { Timer } from '../lib/Timer';
+import { Animator } from '../Lib/Animator';
+import { Timer } from '../Lib/Timer';
 
 export type CountdownProps = {
     endsAt: number

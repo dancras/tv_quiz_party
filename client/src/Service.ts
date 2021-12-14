@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { post, subscribeToServer } from './lib/Request';
+import { post, subscribeToServer } from './Lib/Request';
 
 import { AppStateEvent } from './AppState';
 import { PlainLobby } from './Model/Lobby';

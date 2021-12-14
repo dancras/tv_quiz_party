@@ -13,7 +13,7 @@ import PresenterRoundScreen, { RoundScreenProps } from './Screen/PresenterRoundS
 import PlayerRoundScreen from './Screen/PlayerRoundScreen';
 import QuestionViewer, { QuestionViewerProps } from './Screen/QuestionViewer';
 import Countdown, { CountdownProps } from './Component/Countdown';
-import { Timer } from './lib/Timer';
+import { Timer } from './Lib/Timer';
 import AnswerViewer, { AnswerViewerProps } from './Screen/AnswerViewer';
 import CommandButton, { CommandButtonProps } from './Component/CommandButton';
 import { handleAppStateEvent, setupAppState } from './AppState';

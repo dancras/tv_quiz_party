@@ -2,8 +2,8 @@ import { render, screen } from '@testing-library/react';
 import { act } from 'react-dom/test-utils';
 import { MockProxy, mock } from 'jest-mock-extended';
 import Countdown, { CountdownProps } from './Countdown';
-import { Animator, createTestDirector } from '../lib/Animator';
-import { Timer } from '../lib/Timer';
+import { Animator, createTestDirector } from '../Lib/Animator';
+import { Timer } from '../Lib/Timer';
 
 let mockAnimator: MockProxy<Animator>;
 let mockTimer: MockProxy<Timer>;
