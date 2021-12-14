@@ -7,7 +7,7 @@ import YouTube from 'react-youtube';
 import App from './App';
 import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
-import { setupActiveLobby } from './ActiveLobby';
+import { setupActiveLobby } from './Model/ActiveLobby';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
 import PlayerRoundScreen from './PlayerRoundScreen';

@@ -3,12 +3,12 @@ import userEvent from '@testing-library/user-event';
 import { mock } from 'jest-mock-extended';
 
 import { CommandButtonProps } from './CommandButton';
-import Round, { CurrentQuestion } from './Round';
+import Round, { CurrentQuestion } from './Model/Round';
 import { RoundScreenProps } from './PresenterRoundScreen';
 import PlayerRoundScreen from './PlayerRoundScreen';
 import { CountdownProps } from './Countdown';
 
-import { createCurrentQuestion } from './Round.test';
+import { createCurrentQuestion } from './Model/Round.test';
 import { AnswerViewerProps } from './AnswerViewer';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;

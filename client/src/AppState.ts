@@ -1,6 +1,6 @@
 import { Subject, BehaviorSubject, withLatestFrom, map, Observable } from 'rxjs';
-import { PlainLobby } from './Lobby';
-import { PlainRound, PlainCurrentQuestionMetadata } from './Round';
+import { PlainLobby } from './Model/Lobby';
+import { PlainRound, PlainCurrentQuestionMetadata } from './Model/Round';
 
 export type AppState = {
     userID: string,

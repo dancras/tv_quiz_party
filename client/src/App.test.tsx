@@ -5,7 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { mock, MockProxy } from 'jest-mock-extended';
 
 import App from './App';
-import Lobby from './Lobby';
+import Lobby from './Model/Lobby';
 import { CommandButtonProps } from './CommandButton';
 
 

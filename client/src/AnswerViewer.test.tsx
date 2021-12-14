@@ -8,8 +8,8 @@ import { Timer } from './lib/Timer';
 
 import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 
-import { createCurrentQuestion } from './Round.test';
-import Round from './Round';
+import { createCurrentQuestion } from './Model/Round.test';
+import Round from './Model/Round';
 import { CommandButtonProps } from './CommandButton';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;

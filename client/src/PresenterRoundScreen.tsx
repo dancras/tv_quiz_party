@@ -1,6 +1,6 @@
 import React from 'react';
 import { QuestionViewerProps } from './QuestionViewer';
-import { CurrentQuestion, Round } from './Round';
+import { CurrentQuestion, Round } from './Model/Round';
 
 export type RoundScreenProps = {
     round: Round

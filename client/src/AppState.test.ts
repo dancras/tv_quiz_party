@@ -1,6 +1,6 @@
 import { firstValueFrom } from 'rxjs';
 import { AppState, AppStateEvent, AppStateHandler, setupAppState } from './AppState';
-import { createPlainLobby } from './Lobby.test';
+import { createPlainLobby } from './Model/Lobby.test';
 
 test('state is updated by the handler function', () => {
     const handler: jest.MockedFunction<AppStateHandler> = jest.fn();

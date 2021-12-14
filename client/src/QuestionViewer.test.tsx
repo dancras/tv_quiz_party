@@ -8,7 +8,7 @@ import { Timer } from './lib/Timer';
 
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 
-import { createCurrentQuestion } from './Round.test';
+import { createCurrentQuestion } from './Model/Round.test';
 
 type MockPlayer = {
     playVideo: jest.MockedFunction<() => void>,

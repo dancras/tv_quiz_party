@@ -3,8 +3,8 @@ import { Subject } from 'rxjs';
 import { post, subscribeToServer } from './lib/Request';
 
 import { AppStateEvent } from './AppState';
-import { PlainLobby } from './Lobby';
-import { PlainRound, PlainCurrentQuestionMetadata, Question } from './Round';
+import { PlainLobby } from './Model/Lobby';
+import { PlainRound, PlainCurrentQuestionMetadata, Question } from './Model/Round';
 
 export type ServerMessage =
     { code: 'USER_JOINED', data: any } |

@@ -1,7 +1,7 @@
 import React from 'react';
 import { CommandButtonProps } from './CommandButton';
 
-import Lobby from './Lobby';
+import Lobby from './Model/Lobby';
 
 export type LobbyScreenProps = {
     lobby: Lobby

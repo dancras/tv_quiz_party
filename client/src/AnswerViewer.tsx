@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { CommandButtonProps } from './CommandButton';
 import { Animator } from './lib/Animator';
 import { Timer } from './lib/Timer';
-import Round, { CurrentQuestion } from './Round';
+import Round, { CurrentQuestion } from './Model/Round';
 
 export type AnswerViewerProps = {
     question: CurrentQuestion,

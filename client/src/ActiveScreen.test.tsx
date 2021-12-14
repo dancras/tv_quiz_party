@@ -4,8 +4,8 @@ import { render, screen } from '@testing-library/react';
 import { mock } from 'jest-mock-extended';
 
 import ActiveScreen from './ActiveScreen';
-import Lobby from './Lobby';
-import Round from './Round';
+import Lobby from './Model/Lobby';
+import Round from './Model/Round';
 import { LobbyScreenProps } from './LobbyScreen';
 import { RoundScreenProps } from './PresenterRoundScreen';
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CurrentQuestion } from './Round';
+import { CurrentQuestion } from './Model/Round';
 import { RoundScreenProps } from './PresenterRoundScreen';
 import { CountdownProps } from './Countdown';
 import { AnswerViewerProps } from './AnswerViewer';

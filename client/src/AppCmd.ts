@@ -1,6 +1,6 @@
 import { Observable, Subject, withLatestFrom } from 'rxjs';
 import { AppState, AppStateEvent } from './AppState';
-import { LobbyCmd } from './Lobby';
+import { LobbyCmd } from './Model/Lobby';
 import { exitLobby, startRound, startNextQuestion, answerQuestion, endQuestion } from './Service';
 
 export type AppCmd = LobbyCmd;

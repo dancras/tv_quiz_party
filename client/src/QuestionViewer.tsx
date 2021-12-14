@@ -4,7 +4,7 @@ import { YouTubeProps } from 'react-youtube';
 import { Animator } from './lib/Animator';
 import { Timer } from './lib/Timer';
 
-import { CurrentQuestion } from './Round';
+import { CurrentQuestion } from './Model/Round';
 
 import { CountdownProps } from './Countdown';
 
