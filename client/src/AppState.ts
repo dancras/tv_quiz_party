@@ -45,16 +45,16 @@ export const handleAppStateEvent: AppStateHandler = ([stateEvent, state]) => {
     }
 };
 
-export function initState(): AppState {
-    return {
-        userID: '',
-        activeLobby: null
-    };
-}
-
-export function setupAppState(handler: AppStateHandler): [Observable<AppState>, Subject<AppStateEvent>] {
+export function setupAppState(
+    userID: string,
+    activeLobby: PlainLobby | null,
+    handler: AppStateHandler
+): [Observable<AppState>, Subject<AppStateEvent>] {
     const stateEvents$ = new Subject<AppStateEvent>();
-    const state$ = new BehaviorSubject<AppState>(initState());
+    const state$ = new BehaviorSubject<AppState>({
+        userID,
+        activeLobby
+    });
 
     stateEvents$.pipe(
         withLatestFrom(state$),

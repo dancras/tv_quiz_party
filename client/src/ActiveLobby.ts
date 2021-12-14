@@ -22,7 +22,8 @@ export function setupActiveLobby(
                     skipWhile(y => y.id !== x.id),
                     takeWhile(y => y.id === x.id)
                 )
-            )
-            : null)
+            ) :
+            null
+        )
     );
 }
