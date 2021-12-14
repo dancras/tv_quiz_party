@@ -8,6 +8,7 @@ import './index.css';
 
 import YouTube from 'react-youtube';
 
+import { post, subscribeToServer } from './lib/Request';
 import App from './App';
 import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
@@ -34,17 +35,7 @@ state$.subscribe((state) => {
 });
 
 function setupLobbyWebSocket(id: string) {
-    const url = new URL(`/api/lobby/${id}/ws`, window.location.href);
-    url.protocol = url.protocol.replace('http', 'ws');
-
-    const socket = new WebSocket(url.href);
-
-    socket.addEventListener('open', (event) => {
-        console.debug('Socket is open', event);
-    });
-
-    socket.addEventListener('message', (event) => {
-        console.debug('Socket message', event);
+    return subscribeToServer(`/api/lobby/${id}/ws`, (event) => {
         const message = JSON.parse(event.data) as ServerMessage;
 
         switch (message.code) {
@@ -75,8 +66,6 @@ function setupLobbyWebSocket(id: string) {
                 break;
         }
     });
-
-    return socket;
 }
 
 type ServerMessage =
@@ -97,12 +86,7 @@ cmds$.pipe(
     switch (cmd.cmd) {
         case 'ExitLobby':
             if (state.activeLobby) {
-                fetch(`/api/lobby/${state.activeLobby.id}/exit`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
+                post(`/api/lobby/${state.activeLobby.id}/exit`);
             } else {
                 console.error(
                     'ExitLobby command failed',
@@ -113,12 +97,7 @@ cmds$.pipe(
 
         case 'StartRound':
             if (state.activeLobby) {
-                fetch(`/api/lobby/${state.activeLobby.id}/start_round`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
+                post(`/api/lobby/${state.activeLobby.id}/start_round`);
             } else {
                 console.error(
                     'StartRound command failed',
@@ -132,14 +111,8 @@ cmds$.pipe(
                 const lobbyID = state.activeLobby.id;
                 const currentQuestionIndex = state.activeLobby.activeRound.currentQuestion?.i;
 
-                fetch(`/api/lobby/${lobbyID}/start_question`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        question_index: currentQuestionIndex !== undefined ? currentQuestionIndex + 1 : 0
-                    })
+                post(`/api/lobby/${lobbyID}/start_question`, {
+                    question_index: currentQuestionIndex !== undefined ? currentQuestionIndex + 1 : 0
                 });
             } else {
                 console.error(
@@ -152,15 +125,9 @@ cmds$.pipe(
 
         case 'AnswerQuestion':
             if (state.activeLobby && state.activeLobby.activeRound && state.activeLobby.activeRound.currentQuestion) {
-                fetch(`/api/lobby/${state.activeLobby.id}/answer_question`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        question_index: state.activeLobby.activeRound.currentQuestion.i,
-                        answer: cmd.data
-                    })
+                post(`/api/lobby/${state.activeLobby.id}/answer_question`, {
+                    question_index: state.activeLobby.activeRound.currentQuestion.i,
+                    answer: cmd.data
                 });
             } else {
                 console.error('AnswerQuestion command failed', state.activeLobby);
@@ -170,14 +137,8 @@ cmds$.pipe(
         case 'EndQuestion':
             if (state.activeLobby && state.activeLobby.activeRound && state.activeLobby.activeRound.currentQuestion) {
                 if (state.activeLobby.isHost) {
-                    fetch(`/api/lobby/${state.activeLobby.id}/end_question`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            question_index: state.activeLobby.activeRound.currentQuestion.i,
-                        })
+                    post(`/api/lobby/${state.activeLobby.id}/end_question`, {
+                        question_index: state.activeLobby.activeRound.currentQuestion.i,
                     });
                 }
 
@@ -264,9 +225,7 @@ const timer: Timer = {
 };
 
 const handshakeSendTime = Date.now();
-const handshake = fetch('/api/handshake', {
-    method: 'POST'
-})
+const handshake = post('/api/handshake')
     .then(x => x.json())
     .then((handshakeData) => {
         const handshakeReceivedTime = Date.now();
@@ -293,9 +252,7 @@ function createLobby() {
     areCommandsDisabled$.next(true);
 
     handshake
-        .then(() => fetch('/api/create_lobby', {
-            method: 'POST'
-        }))
+        .then(() => post('/api/create_lobby'))
         .then(response => response.json())
         .then((lobbyData) => {
             stateEvents$.next({
@@ -322,14 +279,8 @@ function joinLobby(joinCode: string, presenter?: boolean) {
                 });
             });
     } else {
-        fetch('/api/join_lobby', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    join_code: joinCode
-                })
+        post('/api/join_lobby', {
+                join_code: joinCode
             })
             .then(response => response.json())
             .then((lobbyData) => {
