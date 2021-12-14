@@ -78,6 +78,33 @@ export function joinLobby(stateEvents$: Subject<AppStateEvent>, joinCode: string
     }
 }
 
+export function exitLobby(lobbyID: string) {
+    post(`/api/lobby/${lobbyID}/exit`);
+}
+
+export function startRound(lobbyID: string) {
+    post(`/api/lobby/${lobbyID}/start_round`);
+}
+
+export function startNextQuestion(lobbyID: string, currentQuestionIndex: number | undefined) {
+    post(`/api/lobby/${lobbyID}/start_question`, {
+        question_index: currentQuestionIndex !== undefined ? currentQuestionIndex + 1 : 0
+    });
+}
+
+export function answerQuestion(lobbyID: string, questionIndex: number, answer: string) {
+    post(`/api/lobby/${lobbyID}/answer_question`, {
+        question_index: questionIndex,
+        answer
+    });
+}
+
+export function endQuestion(lobbyID: string, questionIndex: number) {
+    post(`/api/lobby/${lobbyID}/end_question`, {
+        question_index: questionIndex,
+    });
+}
+
 export function setupLobbyWebSocket(stateEvents$: Subject<AppStateEvent>, id: string) {
     return subscribeToServer(`/api/lobby/${id}/ws`, (event) => {
         const message = JSON.parse(event.data) as ServerMessage;

@@ -1,19 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import { bind, Subscribe } from '@react-rxjs/core';
-import { of, Subject, BehaviorSubject } from 'rxjs';
-import { distinctUntilChanged, map, switchMap, withLatestFrom } from 'rxjs/operators';
+import { of, BehaviorSubject } from 'rxjs';
+import { distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 import { ErrorBoundary } from 'react-error-boundary';
 import './index.css';
 
 import YouTube from 'react-youtube';
 
-import { post } from './lib/Request';
 import App from './App';
 import ActiveScreen from './ActiveScreen';
 import WelcomeScreen from './WelcomeScreen';
 import { setupActiveLobby } from './ActiveLobby';
-import { LobbyCmd } from './Lobby';
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import reportWebVitals from './reportWebVitals';
 import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
@@ -25,6 +23,7 @@ import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 import CommandButton, { CommandButtonProps } from './CommandButton';
 import { handleAppStateEvent, setupAppState } from './AppState';
 import { createLobby, doHandshake, joinLobby, setupLobbyWebSocket } from './Service';
+import { handleAppCmd, setupCmdBus } from './AppCmd';
 
 const areCommandsDisabled$ = new BehaviorSubject(false);
 
@@ -34,89 +33,10 @@ state$.subscribe((state) => {
     areCommandsDisabled$.next(false);
 });
 
-type AppCmd = LobbyCmd;
-const cmds$ = new Subject<AppCmd>();
-
-cmds$.pipe(
-    withLatestFrom(state$)
-).subscribe(([cmd, state]) => {
+const cmds$ = setupCmdBus(state$, ([cmd, state]) => {
     areCommandsDisabled$.next(true);
-
-    switch (cmd.cmd) {
-        case 'ExitLobby':
-            if (state.activeLobby) {
-                post(`/api/lobby/${state.activeLobby.id}/exit`);
-            } else {
-                console.error(
-                    'ExitLobby command failed',
-                    state.activeLobby
-                );
-            }
-            break;
-
-        case 'StartRound':
-            if (state.activeLobby) {
-                post(`/api/lobby/${state.activeLobby.id}/start_round`);
-            } else {
-                console.error(
-                    'StartRound command failed',
-                    state.activeLobby
-                );
-            }
-            break;
-
-        case 'StartNextQuestion':
-            if (state.activeLobby && state.activeLobby.activeRound) {
-                const lobbyID = state.activeLobby.id;
-                const currentQuestionIndex = state.activeLobby.activeRound.currentQuestion?.i;
-
-                post(`/api/lobby/${lobbyID}/start_question`, {
-                    question_index: currentQuestionIndex !== undefined ? currentQuestionIndex + 1 : 0
-                });
-            } else {
-                console.error(
-                    'StartNextQuestion command failed',
-                    state.activeLobby,
-                    state.activeLobby?.activeRound
-                );
-            }
-            break;
-
-        case 'AnswerQuestion':
-            if (state.activeLobby && state.activeLobby.activeRound && state.activeLobby.activeRound.currentQuestion) {
-                post(`/api/lobby/${state.activeLobby.id}/answer_question`, {
-                    question_index: state.activeLobby.activeRound.currentQuestion.i,
-                    answer: cmd.data
-                });
-            } else {
-                console.error('AnswerQuestion command failed', state.activeLobby);
-            }
-            break;
-
-        case 'EndQuestion':
-            if (state.activeLobby && state.activeLobby.activeRound && state.activeLobby.activeRound.currentQuestion) {
-                if (state.activeLobby.isHost) {
-                    post(`/api/lobby/${state.activeLobby.id}/end_question`, {
-                        question_index: state.activeLobby.activeRound.currentQuestion.i,
-                    });
-                }
-
-                state.activeLobby.activeRound.currentQuestion.hasEnded = true;
-                stateEvents$.next({
-                    code: 'CURRENT_QUESTION_UPDATED',
-                    data: state.activeLobby.activeRound.currentQuestion
-                });
-            } else {
-                console.error('AnswerQuestion command failed', state.activeLobby);
-            }
-            break;
-
-        default:
-            const checkExhaustive: never = cmd;
-            console.error('Unhandled Command', checkExhaustive);
-    }
+    handleAppCmd(stateEvents$, [cmd, state]);
 });
-
 
 const activeLobby$ = setupActiveLobby(
     cmds$.next.bind(cmds$),
