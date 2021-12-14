@@ -1,14 +1,14 @@
 import { render, screen } from '@testing-library/react';
 import { MockProxy, mock } from 'jest-mock-extended';
 import { act } from 'react-dom/test-utils';
-import { CountdownProps } from './Countdown';
+import { CountdownProps } from '../Component/Countdown';
 
-import { Animator, createTestDirector } from './lib/Animator';
-import { Timer } from './lib/Timer';
+import { Animator, createTestDirector } from '../lib/Animator';
+import { Timer } from '../lib/Timer';
 
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 
-import { createCurrentQuestion } from './Model/Round.test';
+import { createCurrentQuestion } from '../Model/Round.test';
 
 type MockPlayer = {
     playVideo: jest.MockedFunction<() => void>,

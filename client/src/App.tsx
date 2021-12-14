@@ -2,7 +2,7 @@ import React from 'react';
 import logo from './logo.svg';
 import './App.css';
 import Lobby from './Model/Lobby';
-import { CommandButtonProps } from './CommandButton';
+import { CommandButtonProps } from './Component/CommandButton';
 
 function App(
     CommandButton: React.FunctionComponent<CommandButtonProps>,

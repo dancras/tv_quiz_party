@@ -1,5 +1,5 @@
 import React from 'react';
-import { CommandButtonProps } from './CommandButton';
+import { CommandButtonProps } from '../Component/CommandButton';
 
 function WelcomeScreen(
     CommandButton: React.FunctionComponent<CommandButtonProps>,

@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import { CommandButtonProps } from './CommandButton';
-import { Animator } from './lib/Animator';
-import { Timer } from './lib/Timer';
-import Round, { CurrentQuestion } from './Model/Round';
+import { CommandButtonProps } from '../Component/CommandButton';
+import { Animator } from '../lib/Animator';
+import { Timer } from '../lib/Timer';
+import Round, { CurrentQuestion } from '../Model/Round';
 
 export type AnswerViewerProps = {
     question: CurrentQuestion,

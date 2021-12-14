@@ -1,9 +1,9 @@
 import React from 'react';
-import { CurrentQuestion } from './Model/Round';
+import { CurrentQuestion } from '../Model/Round';
 import { RoundScreenProps } from './PresenterRoundScreen';
-import { CountdownProps } from './Countdown';
+import { CountdownProps } from '../Component/Countdown';
 import { AnswerViewerProps } from './AnswerViewer';
-import { CommandButtonProps } from './CommandButton';
+import { CommandButtonProps } from '../Component/CommandButton';
 
 function PlayerRoundScreen(
     CommandButton: React.FunctionComponent<CommandButtonProps>,

@@ -4,8 +4,8 @@ import userEvent from '@testing-library/user-event';
 import { MockProxy, mock } from 'jest-mock-extended';
 
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
-import Lobby from './Model/Lobby';
-import { CommandButtonProps } from './CommandButton';
+import Lobby from '../Model/Lobby';
+import { CommandButtonProps } from '../Component/CommandButton';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let useUsers: jest.MockedFunction<() => string[]>;

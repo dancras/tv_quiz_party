@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { mock } from 'jest-mock-extended';
 
-import Round, { CurrentQuestion } from './Model/Round';
+import Round, { CurrentQuestion } from '../Model/Round';
 import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
 import { QuestionViewerProps } from './QuestionViewer';
 
-import { createCurrentQuestion } from './Model/Round.test';
+import { createCurrentQuestion } from '../Model/Round.test';
 
 let DummyQuestionViewer: React.FunctionComponent<QuestionViewerProps>;
 let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestion | null>;

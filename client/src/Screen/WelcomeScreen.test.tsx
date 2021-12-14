@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { CommandButtonProps } from './CommandButton';
+import { CommandButtonProps } from '../Component/CommandButton';
 import WelcomeScreen from './WelcomeScreen';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;

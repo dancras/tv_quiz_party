@@ -3,14 +3,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MockProxy, mock } from 'jest-mock-extended';
 
-import { Animator, createTestDirector } from './lib/Animator';
-import { Timer } from './lib/Timer';
+import { Animator, createTestDirector } from '../lib/Animator';
+import { Timer } from '../lib/Timer';
 
 import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 
-import { createCurrentQuestion } from './Model/Round.test';
-import Round from './Model/Round';
-import { CommandButtonProps } from './CommandButton';
+import { createCurrentQuestion } from '../Model/Round.test';
+import Round from '../Model/Round';
+import { CommandButtonProps } from '../Component/CommandButton';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let mockAnimator: MockProxy<Animator>;
