@@ -6,24 +6,25 @@ import { mock, MockProxy } from 'jest-mock-extended';
 
 import App from './App';
 import Lobby from './Model/Lobby';
-import { CommandButtonProps } from './CommandButton';
+import { CommandButtonProps } from './Component/CommandButton';
+import { BehaviorSubject } from 'rxjs';
 
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
-let useActiveLobby: jest.MockedFunction<() => Lobby | null>;
+let activeLobby$: BehaviorSubject<Lobby | null>;
 let DummyActiveScreen: React.FunctionComponent;
 
 function ExampleApp() {
     return App(
         DummyCommandButton,
-        useActiveLobby,
+        activeLobby$,
         DummyActiveScreen
     );
 }
 
 beforeEach(() => {
     DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
-    useActiveLobby = jest.fn();
+    activeLobby$ = new BehaviorSubject<Lobby | null>(null);
     DummyActiveScreen = () => <div>Screen</div>;
 });
 
@@ -35,7 +36,7 @@ test('displays contents of ActiveScreen', () => {
 
 test('exit lobby button shown when there is an active lobby', () => {
     const mockLobby: MockProxy<Lobby> = mock<Lobby>();
-    useActiveLobby.mockReturnValue(mockLobby);
+    activeLobby$.next(mockLobby);
 
     render(<ExampleApp />);
 

@@ -3,13 +3,15 @@ import logo from './logo.svg';
 import './App.css';
 import Lobby from './Model/Lobby';
 import { CommandButtonProps } from './Component/CommandButton';
+import { Observable } from 'rxjs';
+import { useObservable } from './Lib/RxReact';
 
 function App(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
-    useActiveLobby: () => Lobby | null,
+    activeLobby$: Observable<Lobby | null>,
     ActiveScreen: React.FunctionComponent
 ) {
-    const lobby = useActiveLobby();
+    const lobby = useObservable(activeLobby$);
 
     function handleExitLobbyButton() {
         (lobby as Lobby).exit();

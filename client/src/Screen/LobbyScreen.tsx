@@ -1,5 +1,6 @@
 import React from 'react';
 import { CommandButtonProps } from '../Component/CommandButton';
+import { useObservable } from '../Lib/RxReact';
 
 import Lobby from '../Model/Lobby';
 
@@ -9,10 +10,9 @@ export type LobbyScreenProps = {
 
 function LobbyScreen(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
-    useUsers: () => string[],
     { lobby } : LobbyScreenProps
 ) {
-    const users = useUsers();
+    const users = useObservable(lobby.users$);
 
     function handleStartRoundButton() {
         lobby.startRound();

@@ -8,19 +8,17 @@ import Lobby from '../Model/Lobby';
 import { CommandButtonProps } from '../Component/CommandButton';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
-let useUsers: jest.MockedFunction<() => string[]>;
 let mockLobby: MockProxy<Lobby>;
 
 function ExampleLobbyScreen(props: LobbyScreenProps) {
-    return LobbyScreen(DummyCommandButton, useUsers, props);
+    return LobbyScreen(DummyCommandButton, props);
 }
 
 beforeEach(() => {
     DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
-    useUsers = jest.fn();
-    useUsers.mockReturnValue([]);
     mockLobby = mock<Lobby>();
     mockLobby.joinCode = 'join-code';
+    mockLobby.users$ = new BehaviorSubject([]);
 });
 
 test('join code is displayed', () => {
@@ -33,7 +31,6 @@ test('join code is displayed', () => {
 });
 
 test('users are displayed', () => {
-    useUsers.mockReturnValue(['user1', 'user2']);
     mockLobby.users$ = new BehaviorSubject(['user1', 'user2']);
 
     render(<ExampleLobbyScreen lobby={mockLobby} />);

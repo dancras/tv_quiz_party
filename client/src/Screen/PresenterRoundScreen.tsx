@@ -1,6 +1,7 @@
 import React from 'react';
+import { useObservable } from '../Lib/RxReact';
+import { Round } from '../Model/Round';
 import { QuestionViewerProps } from './QuestionViewer';
-import { CurrentQuestion, Round } from '../Model/Round';
 
 export type RoundScreenProps = {
     round: Round
@@ -8,10 +9,9 @@ export type RoundScreenProps = {
 
 function PresenterRoundScreen(
     QuestionViewer: React.FunctionComponent<QuestionViewerProps>,
-    useCurrentQuestion: () => CurrentQuestion | null,
     { round } : RoundScreenProps
 ) {
-    const currentQuestion = useCurrentQuestion();
+    const currentQuestion = useObservable(round.currentQuestion$);
 
     return (
         <div>

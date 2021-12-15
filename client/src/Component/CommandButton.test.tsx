@@ -1,18 +1,18 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { BehaviorSubject } from 'rxjs';
 import CommandButton, { CommandButtonProps } from './CommandButton';
 
-let useAreCommandsDisabled: jest.MockedFunction<() => boolean>;
+let areCommandsDisabled$: BehaviorSubject<boolean>;
 
 function ComposedCommandButton(
     props: CommandButtonProps
 ) {
-    return CommandButton(useAreCommandsDisabled, props);
+    return CommandButton(areCommandsDisabled$, props);
 }
 
 beforeEach(() => {
-    useAreCommandsDisabled = jest.fn();
-    useAreCommandsDisabled.mockReturnValue(false);
+    areCommandsDisabled$ = new BehaviorSubject(false as boolean);
 });
 
 test('it calls the onClick prop on button clicks', () => {
@@ -30,7 +30,7 @@ test('it calls the onClick prop on button clicks', () => {
 test('it disables when useAreCommandsDisabled is true', () => {
     const onClickSpy = jest.fn();
 
-    useAreCommandsDisabled.mockReturnValue(true);
+    areCommandsDisabled$.next(true);
 
     render(<ComposedCommandButton disabled={false} onClick={onClickSpy}>Click Me</ComposedCommandButton>);
 
@@ -40,8 +40,6 @@ test('it disables when useAreCommandsDisabled is true', () => {
 
 test('it disables when passed disabled attribute is true', () => {
     const onClickSpy = jest.fn();
-
-    useAreCommandsDisabled.mockReturnValue(false);
 
     render(<ComposedCommandButton disabled={true} onClick={onClickSpy}>Click Me</ComposedCommandButton>);
 

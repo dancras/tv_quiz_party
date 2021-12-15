@@ -1,4 +1,3 @@
-import { bind } from '@react-rxjs/core';
 import { of, BehaviorSubject, Observable } from 'rxjs';
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 
@@ -60,14 +59,6 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         }
     };
 
-    const [useActiveLobby] = bind(activeLobby$, null);
-
-    const activeLobbyUsers$ = activeLobby$.pipe(
-        switchMap(lobby => lobby ? lobby.users$ : of([])),
-        distinctUntilChanged()
-    );
-    const [useActiveLobbyUsers] = bind(activeLobbyUsers$, []);
-
     const activeRound$ = activeLobby$.pipe(
         switchMap(lobby => lobby ? lobby.activeRound$ : of(null)),
         distinctUntilChanged()
@@ -76,7 +67,6 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
     const currentQuestion$ = activeRound$.pipe(
         switchMap(round => round ? round.currentQuestion$ : of(null))
     );
-    const [useCurrentQuestion] = bind(currentQuestion$, null);
 
     const currentQuestionTimings$: Observable<QuestionTimings> = currentQuestion$.pipe(
         switchMap(question => question ?
@@ -91,9 +81,7 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         )
     );
 
-    const [useAreCommandsDisabled] = bind(areCommandsDisabled$, false);
-
-    const ComposedCommandButton = (props: CommandButtonProps) => CommandButton(useAreCommandsDisabled, props);
+    const ComposedCommandButton = (props: CommandButtonProps) => CommandButton(areCommandsDisabled$, props);
 
     function disableCommandsDuring<T extends unknown[]>(innerFn: (...args: T) => Promise<any>): (...args: T) => void {
         return (...args) => {
@@ -109,7 +97,7 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         disableCommandsDuring((joinCode: string, presenter?: boolean) => joinLobby(stateEvents$, joinCode, presenter))
     );
 
-    const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(ComposedCommandButton, useActiveLobbyUsers, props);
+    const ActiveLobbyScreen = (props: LobbyScreenProps) => LobbyScreen(ComposedCommandButton, props);
 
     const ComposedCountdown = (props: CountdownProps) => Countdown(window, timer, props);
 
@@ -117,7 +105,6 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
 
     const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundScreen(
         ComposedQuestionViewer,
-        useCurrentQuestion,
         props
     );
 
@@ -139,5 +126,5 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         ActivePlayerRoundScreen
     );
 
-    return () => App(ComposedCommandButton, useActiveLobby, MainActiveScreen);
+    return () => App(ComposedCommandButton, activeLobby$, MainActiveScreen);
 }
