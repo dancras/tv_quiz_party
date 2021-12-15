@@ -10,12 +10,15 @@ import { CountdownProps } from '../Component/Countdown';
 
 import { createCurrentQuestion } from '../Model/Round.test';
 import { AnswerViewerProps } from './AnswerViewer';
+import { QuestionTimings } from '../Model/QuestionTimer';
+import { createTimings } from '../Model/QuestionTimer.test';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let MockAnswerViewer: jest.MockedFunction<React.FunctionComponent<AnswerViewerProps>>;
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
 let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestion | null>;
 let useCanStartNextQuestion: jest.MockedFunction<() => boolean>;
+let useCurrentQuestionTimings: jest.MockedFunction<() => QuestionTimings>;
 
 function ExamplePlayerRoundScreen(
     props : RoundScreenProps
@@ -26,6 +29,7 @@ function ExamplePlayerRoundScreen(
         MockCountdown,
         useCurrentQuestion,
         useCanStartNextQuestion,
+        useCurrentQuestionTimings,
         props
     );
 }
@@ -41,10 +45,15 @@ beforeEach(() => {
 
     useCanStartNextQuestion = jest.fn();
     useCanStartNextQuestion.mockReturnValue(true);
+
+    useCurrentQuestionTimings = jest.fn();
+    useCurrentQuestionTimings.mockReturnValue(createTimings(0));
 });
 
 test('start question button calls start question function', () => {
     const mockRound = mock<Round>();
+    useCurrentQuestionTimings.mockReturnValue(createTimings(5));
+
     render(<ExamplePlayerRoundScreen round={mockRound} />);
 
     const buttonElement = screen.getByText(/Start Question/i);
@@ -56,7 +65,18 @@ test('start question button calls start question function', () => {
 
 test('start question button not shown when canStartNextQuestion is false', () => {
     const mockRound = mock<Round>();
+    useCurrentQuestionTimings.mockReturnValue(createTimings(5));
     useCanStartNextQuestion.mockReturnValue(false);
+
+    render(<ExamplePlayerRoundScreen round={mockRound} />);
+
+    const buttonElement = screen.queryByText(/Start Question/i);
+    expect(buttonElement).not.toBeInTheDocument();
+});
+
+
+test('start question button not shown when question is not ended', () => {
+    const mockRound = mock<Round>();
 
     render(<ExamplePlayerRoundScreen round={mockRound} />);
 

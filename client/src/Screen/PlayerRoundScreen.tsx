@@ -1,9 +1,9 @@
-import React from 'react';
 import { CurrentQuestion } from '../Model/Round';
 import { RoundScreenProps } from './PresenterRoundScreen';
 import { CountdownProps } from '../Component/Countdown';
 import { AnswerViewerProps } from './AnswerViewer';
 import { CommandButtonProps } from '../Component/CommandButton';
+import { QuestionTimings } from '../Model/QuestionTimer';
 
 function PlayerRoundScreen(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
@@ -11,9 +11,11 @@ function PlayerRoundScreen(
     Countdown: React.FunctionComponent<CountdownProps>,
     useCurrentQuestion: () => CurrentQuestion | null,
     useCanStartNextQuestion: () => boolean,
+    useCurrentQuestionTimings: () => QuestionTimings,
     { round } : RoundScreenProps
 ) {
     const currentQuestion = useCurrentQuestion();
+    const timings = useCurrentQuestionTimings();
     const canStartNextQuestion = useCanStartNextQuestion();
 
     function handleStartQuestionButton() {
@@ -34,7 +36,7 @@ function PlayerRoundScreen(
                 <div>Waiting for host to start...</div>
 
             }
-            { canStartNextQuestion ?
+            { canStartNextQuestion && timings.hasEnded ?
                 <CommandButton onClick={handleStartQuestionButton}>Start Question</CommandButton> :
                 <></>
             }

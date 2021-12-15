@@ -1913,6 +1913,11 @@
     "@types/mime" "^1"
     "@types/node" "*"
 
+"@types/shallow-equals@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@types/shallow-equals/-/shallow-equals-1.0.0.tgz#5b66fb397e7f3fc8300a7b4f4350ce8567687ea4"
+  integrity sha512-XtGSj7GYPfJwaklDtMEONj+kmpyCP8OLYoPqp/ROM8BL1VaF2IgYbxiEKfLvOyHN7c2d1KAFYzy6EIu8CSFt1A==
+
 "@types/source-list-map@*":
   version "0.1.2"
   resolved "https://registry.yarnpkg.com/@types/source-list-map/-/source-list-map-0.1.2.tgz#0078836063ffaf17412349bba364087e0ac02ec9"
@@ -9949,6 +9954,11 @@ sha.js@^2.4.0, sha.js@^2.4.8:
   dependencies:
     inherits "^2.0.1"
     safe-buffer "^5.0.1"
+
+shallow-equals@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/shallow-equals/-/shallow-equals-1.0.0.tgz#24b74bf1c634c11ed4c7182a6df6fb300dce4390"
+  integrity sha1-JLdL8cY0wR7Uxxgqbfb7MA3OQ5A=
 
 shebang-command@^1.2.0:
   version "1.2.0"

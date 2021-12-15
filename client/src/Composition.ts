@@ -1,5 +1,5 @@
 import { bind } from '@react-rxjs/core';
-import { of, BehaviorSubject } from 'rxjs';
+import { of, BehaviorSubject, Observable } from 'rxjs';
 import { distinctUntilChanged, map, switchMap } from 'rxjs/operators';
 
 import YouTube from 'react-youtube';
@@ -19,6 +19,7 @@ import CommandButton, { CommandButtonProps } from './Component/CommandButton';
 import { handleAppStateEvent, setupAppState } from './AppState';
 import { createLobby, HandshakeData, joinLobby, setupLobbyWebSocket } from './Service';
 import { handleAppCmd, setupCmdBus } from './AppCmd';
+import { QuestionTimings, setupQuestionTimer } from './Model/QuestionTimer';
 
 export function composeApp(handshakeData: HandshakeData): React.FunctionComponent {
     const areCommandsDisabled$ = new BehaviorSubject(false);
@@ -78,6 +79,27 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
     );
     const [useCurrentQuestion] = bind(currentQuestion$, null);
 
+    const currentQuestionTimings$: Observable<QuestionTimings> = currentQuestion$.pipe(
+        switchMap(question => question ?
+            setupQuestionTimer(window, timer, question) :
+            of({
+                hasStarted: true,
+                displayAnswers: true,
+                lockAnswers: true,
+                revealAnswer: true,
+                hasEnded: true
+            })
+        )
+    );
+
+    const [useCurrentQuestionTimings] = bind(currentQuestionTimings$, {
+        hasStarted: true,
+        displayAnswers: true,
+        lockAnswers: true,
+        revealAnswer: true,
+        hasEnded: true
+    });
+
     const canStartNextQuestion$ = activeRound$.pipe(
         switchMap(round => round ? round.canStartNextQuestion$ : of(false))
     );
@@ -121,6 +143,7 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         ComposedCountdown,
         useCurrentQuestion,
         useCanStartNextQuestion,
+        useCurrentQuestionTimings,
         props
     );
 
