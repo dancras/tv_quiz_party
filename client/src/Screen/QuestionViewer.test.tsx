@@ -1,24 +1,24 @@
 import { render, screen } from '@testing-library/react';
-import { MockProxy, mock } from 'jest-mock-extended';
+import { mock, MockProxy } from 'jest-mock-extended';
 import { act } from 'react-dom/test-utils';
+import { BehaviorSubject } from 'rxjs';
 import { CountdownProps } from '../Component/Countdown';
-
-import { Animator, createTestDirector } from '../Lib/Animator';
 import { Timer } from '../Lib/Timer';
-
-import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
-
+import { QuestionTimings } from '../Model/QuestionTimer';
+import { createTimings } from '../Model/QuestionTimer.test';
 import { createCurrentQuestion } from '../Model/Round.test';
+import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 
 type MockPlayer = {
     playVideo: jest.MockedFunction<() => void>,
-    seekTo: jest.MockedFunction<(seconds: number, allowSeekAhead: boolean) => void>
+    seekTo: jest.MockedFunction<(seconds: number, allowSeekAhead: boolean) => void>,
+    getPlayerState: jest.MockedFunction<() => number>
 }
 
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
 let MockYouTube: any;
 let mockPlayer: MockPlayer;
-let mockAnimator: MockProxy<Animator>;
+let currentQuestionTimings$: BehaviorSubject<QuestionTimings>;
 let mockTimer: MockProxy<Timer>;
 
 beforeEach(() => {
@@ -28,14 +28,15 @@ beforeEach(() => {
     MockYouTube.mockReturnValue(<div>YouTube</div>);
     mockPlayer = {
         playVideo: jest.fn(),
-        seekTo: jest.fn()
+        seekTo: jest.fn(),
+        getPlayerState: jest.fn()
     };
-    mockAnimator = mock<Animator>();
+    currentQuestionTimings$ = new BehaviorSubject(createTimings(0));
     mockTimer = mock<Timer>();
 });
 
 function ExampleQuestionViewer(props: QuestionViewerProps) {
-    return QuestionViewer(MockCountdown, MockYouTube, mockAnimator, mockTimer, props);
+    return QuestionViewer(MockCountdown, MockYouTube, currentQuestionTimings$, mockTimer, props);
 }
 
 test('it shows Countdown component', () => {
@@ -69,66 +70,31 @@ test('it sends correct options to the video', () => {
     }));
 });
 
-test('it plays the video when it is ready and the startTime is reached', () => {
-    const animate = createTestDirector(mockAnimator);
+test('it plays the video when player is ready and question has started', () => {
+    const question = createCurrentQuestion();
 
-    const question = createCurrentQuestion({
-        startTime: 10000,
-        questionStartTime: 2000,
-        endTime: 4000,
-        videoID: 'foo-id'
-    });
     render(<ExampleQuestionViewer question={question} />);
 
     const { onReady } = MockYouTube.mock.calls[0][0];
 
-    onReady && onReady({
-        target: mockPlayer
-    });
+    mockPlayer.getPlayerState.mockReturnValue(5);
 
-    mockTimer.now.mockReturnValue(9999);
     act(() => {
-        animate();
+        onReady && onReady({
+            target: mockPlayer
+        });
     });
 
     expect(mockPlayer.playVideo).not.toHaveBeenCalled();
 
-    mockTimer.now.mockReturnValue(10000);
     act(() => {
-        animate();
+        currentQuestionTimings$.next(createTimings(1));
     });
 
     expect(mockPlayer.playVideo).toHaveBeenCalled();
 });
 
-test('it seeks forward if video is ready after startTime', () => {
-    const animate = createTestDirector(mockAnimator);
-
-    const question = createCurrentQuestion({
-        startTime: 10000,
-        questionStartTime: 20,
-        endTime: 40,
-        videoID: 'foo-id'
-    });
-    render(<ExampleQuestionViewer question={question} />);
-
-    const { onReady } = MockYouTube.mock.calls[0][0];
-
-    onReady && onReady({
-        target: mockPlayer
-    });
-
-    mockTimer.now.mockReturnValue(15000);
-    act(() => {
-        animate();
-    });
-
-    expect(mockPlayer.seekTo).toHaveBeenCalledWith(25, true);
-});
-
-test('it does not play video if elapsed time passes end time', () => {
-    const animate = createTestDirector(mockAnimator);
-
+test('it does not play if video state is not 5 video cued', () => {
     const question = createCurrentQuestion({
         startTime: 10000,
         questionStartTime: 20,
@@ -139,13 +105,64 @@ test('it does not play video if elapsed time passes end time', () => {
 
     const { onReady } = MockYouTube.mock.calls[0][0];
 
-    onReady && onReady({
-        target: mockPlayer
+    mockPlayer.getPlayerState.mockReturnValue(0);
+
+    act(() => {
+        onReady && onReady({
+            target: mockPlayer
+        });
+
+        currentQuestionTimings$.next(createTimings(1));
     });
 
-    mockTimer.now.mockReturnValue(20000);
+    expect(mockPlayer.seekTo).not.toHaveBeenCalled();
+    expect(mockPlayer.playVideo).not.toHaveBeenCalled();
+});
+
+test('it seeks forward if player is ready after question has started', () => {
+    const question = createCurrentQuestion({
+        startTime: 10000,
+        questionStartTime: 20,
+        endTime: 40
+    });
+
+    render(<ExampleQuestionViewer question={question} />);
+
+    const { onReady } = MockYouTube.mock.calls[0][0];
+
+    mockPlayer.getPlayerState.mockReturnValue(5);
+    mockTimer.now.mockReturnValue(15000);
+
     act(() => {
-        animate();
+        onReady && onReady({
+            target: mockPlayer
+        });
+
+        currentQuestionTimings$.next(createTimings(1));
+    });
+
+    expect(mockPlayer.seekTo).toHaveBeenCalledWith(25, true);
+});
+
+test('it does not play video if question has ended', () => {
+    const question = createCurrentQuestion({
+        startTime: 10000,
+        questionStartTime: 20,
+        endTime: 30,
+        videoID: 'foo-id'
+    });
+    render(<ExampleQuestionViewer question={question} />);
+
+    const { onReady } = MockYouTube.mock.calls[0][0];
+
+    mockPlayer.getPlayerState.mockReturnValue(5);
+
+    act(() => {
+        onReady && onReady({
+            target: mockPlayer
+        });
+
+        currentQuestionTimings$.next(createTimings(5));
     });
 
     expect(mockPlayer.seekTo).not.toHaveBeenCalled();

@@ -1,12 +1,14 @@
-import React, { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { YouTubeProps } from 'react-youtube';
 
-import { Animator } from '../Lib/Animator';
 import { Timer } from '../Lib/Timer';
 
 import { CurrentQuestion } from '../Model/Round';
 
 import { CountdownProps } from '../Component/Countdown';
+import { useObservable } from '../Lib/RxReact';
+import { Observable } from 'rxjs';
+import { QuestionTimings } from '../Model/QuestionTimer';
 
 export type QuestionViewerProps = {
     question: CurrentQuestion
@@ -15,7 +17,7 @@ export type QuestionViewerProps = {
 function QuestionViewer(
     Countdown: React.FunctionComponent<CountdownProps>,
     YouTube: React.ComponentClass<YouTubeProps>,
-    animator: Animator,
+    currentQuestionTimings$: Observable<QuestionTimings>,
     timer: Timer,
     { question } : QuestionViewerProps
 ) {
@@ -23,28 +25,16 @@ function QuestionViewer(
     // the YouTube component. If state becomes necessary again, ensure that the opts value doesn't
     // change when re-rendering. This can be achieved using refs.
 
-    const animateRef = React.useRef<number | null>(null);
+    const [player, setPlayer] = useState<any>(null);
 
-    const playerRef = React.useRef<any>(null);
-
-    function animate() {
-        const now = timer.now();
-        if (question.startTime <= now && playerRef.current) {
-            const elapsedTime = (now - question.startTime) / 1000;
-            if (question.questionStartTime + elapsedTime < question.endTime) {
-                playerRef.current.seekTo(question.questionStartTime + elapsedTime, true);
-                playerRef.current.playVideo();
-            }
-        } else {
-            animateRef.current = animator.requestAnimationFrame(animate);
-        }
-    };
+    const timings = useObservable(currentQuestionTimings$);
 
     useEffect(() => {
-        animateRef.current = animator.requestAnimationFrame(animate);
-        return () => animateRef.current ? animator.cancelAnimationFrame(animateRef.current) : void(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        if (timings.hasStarted && player && !timings.hasEnded && player.getPlayerState() === 5) {
+            player.seekTo(question.questionStartTime + (timer.now() - question.startTime) / 1000, true);
+            player.playVideo();
+        }
+    });
 
     const opts = {
         playerVars: {
@@ -56,7 +46,7 @@ function QuestionViewer(
     };
 
     function onReady(event: { target: any }) {
-        playerRef.current = event.target;
+        setPlayer(event.target);
     }
 
     return (

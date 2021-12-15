@@ -101,7 +101,7 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
 
     const ComposedCountdown = (props: CountdownProps) => Countdown(window, timer, props);
 
-    const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(ComposedCountdown, YouTube, window, timer, props);
+    const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(ComposedCountdown, YouTube, currentQuestionTimings$, timer, props);
 
     const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundScreen(
         ComposedQuestionViewer,
