@@ -51,6 +51,11 @@ export function setupAppState(
     handler: AppStateHandler
 ): [Observable<AppState>, Subject<AppStateEvent>] {
     const stateEvents$ = new Subject<AppStateEvent>();
+
+    if (activeLobby) {
+        activeLobby.isHost = userID === activeLobby.hostID;
+    }
+
     const state$ = new BehaviorSubject<AppState>({
         userID,
         activeLobby
