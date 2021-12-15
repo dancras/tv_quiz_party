@@ -1,18 +1,18 @@
+import { Observable } from 'rxjs';
+import { ensureObservable, useObservable } from '../Lib/RxReact';
 import Lobby from '../Model/Lobby';
-import Round from '../Model/Round';
 import { LobbyScreenProps } from './LobbyScreen';
 import { RoundScreenProps } from './PresenterRoundScreen';
 
 function ActiveScreen(
-    useActiveLobby: () => Lobby | null,
-    useActiveRound: () => Round | null,
+    activeLobby$: Observable<Lobby | null>,
     WelcomeScreen: React.FunctionComponent,
     LobbyScreen: React.FunctionComponent<LobbyScreenProps>,
     PresenterRoundScreen: React.FunctionComponent<RoundScreenProps>,
     PlayerRoundScreen: React.FunctionComponent<RoundScreenProps>
 ) {
-    const lobby = useActiveLobby();
-    const round = useActiveRound();
+    const lobby = useObservable(activeLobby$);
+    const round = useObservable(ensureObservable(lobby?.activeRound$, null));
 
     if (round && lobby?.isPresenter) {
         return <PresenterRoundScreen round={round} />;

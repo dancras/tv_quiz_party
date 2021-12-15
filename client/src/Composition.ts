@@ -72,7 +72,6 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         switchMap(lobby => lobby ? lobby.activeRound$ : of(null)),
         distinctUntilChanged()
     );
-    const [useActiveRound] = bind(activeRound$, null);
 
     const currentQuestion$ = activeRound$.pipe(
         switchMap(round => round ? round.currentQuestion$ : of(null))
@@ -91,19 +90,6 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
             })
         )
     );
-
-    const [useCurrentQuestionTimings] = bind(currentQuestionTimings$, {
-        hasStarted: true,
-        displayAnswers: true,
-        lockAnswers: true,
-        revealAnswer: true,
-        hasEnded: true
-    });
-
-    const canStartNextQuestion$ = activeRound$.pipe(
-        switchMap(round => round ? round.canStartNextQuestion$ : of(false))
-    );
-    const [useCanStartNextQuestion] = bind(canStartNextQuestion$, false);
 
     const [useAreCommandsDisabled] = bind(areCommandsDisabled$, false);
 
@@ -135,21 +121,18 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         props
     );
 
-    const ComposedAnswerViewer = (props: AnswerViewerProps) => AnswerViewer(ComposedCommandButton, window, timer, props);
+    const ComposedAnswerViewer = (props: AnswerViewerProps) => AnswerViewer(ComposedCommandButton, currentQuestionTimings$, props);
 
     const ActivePlayerRoundScreen = (props: RoundScreenProps) => PlayerRoundScreen(
         ComposedCommandButton,
         ComposedAnswerViewer,
         ComposedCountdown,
-        useCurrentQuestion,
-        useCanStartNextQuestion,
-        useCurrentQuestionTimings,
+        currentQuestionTimings$,
         props
     );
 
     const MainActiveScreen = () => ActiveScreen(
-        useActiveLobby,
-        useActiveRound,
+        activeLobby$,
         MainWelcomeScreen,
         ActiveLobbyScreen,
         ActivePresenterRoundScreen,

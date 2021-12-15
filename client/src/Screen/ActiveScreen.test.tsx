@@ -8,9 +8,9 @@ import Lobby from '../Model/Lobby';
 import Round from '../Model/Round';
 import { LobbyScreenProps } from './LobbyScreen';
 import { RoundScreenProps } from './PresenterRoundScreen';
+import { BehaviorSubject } from 'rxjs';
 
-let useActiveLobby: jest.MockedFunction<() => Lobby | null>;
-let useActiveRound: jest.MockedFunction<() => Round | null>;
+let activeLobby$: BehaviorSubject<Lobby | null>;
 let DummyWelcomeScreen: React.FunctionComponent;
 let DummyLobbyScreen: React.FunctionComponent<LobbyScreenProps>;
 let DummyPresenterRoundScreen: React.FunctionComponent<RoundScreenProps>;
@@ -18,8 +18,7 @@ let DummyPlayerRoundScreen: React.FunctionComponent<RoundScreenProps>;
 
 function ExampleActiveScreen() {
     return ActiveScreen(
-        useActiveLobby,
-        useActiveRound,
+        activeLobby$,
         DummyWelcomeScreen,
         DummyLobbyScreen,
         DummyPresenterRoundScreen,
@@ -28,8 +27,7 @@ function ExampleActiveScreen() {
 }
 
 beforeEach(() => {
-    useActiveLobby = jest.fn();
-    useActiveRound = jest.fn();
+    activeLobby$ = new BehaviorSubject<Lobby | null>(null);
     DummyWelcomeScreen = () => <div>Welcome</div>;
     DummyLobbyScreen = () => <div>Lobby</div>;
     DummyPresenterRoundScreen = () => <div>Presenter</div>;
@@ -45,7 +43,10 @@ test('it displays welcome screen when there is no active lobby', () => {
 });
 
 test('it displays lobby screen when there is an active lobby', () => {
-    useActiveLobby.mockReturnValue(mock<Lobby>());
+    const lobby = mock<Lobby>();
+    lobby.activeRound$ = new BehaviorSubject(null);
+
+    activeLobby$.next(lobby);
 
     render(<ExampleActiveScreen />);
 
@@ -57,9 +58,9 @@ test('it displays lobby screen when there is an active lobby', () => {
 test('it displays presenter round screen when there is an active presenter round', () => {
     const lobby = mock<Lobby>();
     lobby.isPresenter = true;
+    lobby.activeRound$ = new BehaviorSubject(mock<Round>());
 
-    useActiveLobby.mockReturnValue(lobby);
-    useActiveRound.mockReturnValue(mock<Round>());
+    activeLobby$.next(lobby);
 
     render(<ExampleActiveScreen />);
 
@@ -72,9 +73,9 @@ test('it displays presenter round screen when there is an active presenter round
 test('it displays player round screen when there is an active player round', () => {
     const lobby = mock<Lobby>();
     lobby.isPresenter = false;
+    lobby.activeRound$ = new BehaviorSubject(mock<Round>());
 
-    useActiveLobby.mockReturnValue(lobby);
-    useActiveRound.mockReturnValue(mock<Round>());
+    activeLobby$.next(lobby);
 
     render(<ExampleActiveScreen />);
 

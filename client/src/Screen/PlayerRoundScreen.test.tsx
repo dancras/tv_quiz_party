@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { mock } from 'jest-mock-extended';
+import { mock, MockProxy } from 'jest-mock-extended';
 
 import { CommandButtonProps } from '../Component/CommandButton';
-import Round, { CurrentQuestion } from '../Model/Round';
+import Round from '../Model/Round';
 import { RoundScreenProps } from './PresenterRoundScreen';
 import PlayerRoundScreen from './PlayerRoundScreen';
 import { CountdownProps } from '../Component/Countdown';
@@ -12,13 +12,13 @@ import { createCurrentQuestion } from '../Model/Round.test';
 import { AnswerViewerProps } from './AnswerViewer';
 import { QuestionTimings } from '../Model/QuestionTimer';
 import { createTimings } from '../Model/QuestionTimer.test';
+import { BehaviorSubject, of } from 'rxjs';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let MockAnswerViewer: jest.MockedFunction<React.FunctionComponent<AnswerViewerProps>>;
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
-let useCurrentQuestion: jest.MockedFunction<() => CurrentQuestion | null>;
-let useCanStartNextQuestion: jest.MockedFunction<() => boolean>;
-let useCurrentQuestionTimings: jest.MockedFunction<() => QuestionTimings>;
+let currentQuestionTimings$: BehaviorSubject<QuestionTimings>;
+let mockRound: MockProxy<Round>;
 
 function ExamplePlayerRoundScreen(
     props : RoundScreenProps
@@ -27,9 +27,7 @@ function ExamplePlayerRoundScreen(
         DummyCommandButton,
         MockAnswerViewer,
         MockCountdown,
-        useCurrentQuestion,
-        useCanStartNextQuestion,
-        useCurrentQuestionTimings,
+        currentQuestionTimings$,
         props
     );
 }
@@ -40,19 +38,14 @@ beforeEach(() => {
     MockAnswerViewer.mockReturnValue(<div>AnswerViewer</div>);
     MockCountdown = jest.fn();
     MockCountdown.mockReturnValue(<div>Countdown</div>);
-    useCurrentQuestion = jest.fn();
-    useCurrentQuestion.mockReturnValue(null);
-
-    useCanStartNextQuestion = jest.fn();
-    useCanStartNextQuestion.mockReturnValue(true);
-
-    useCurrentQuestionTimings = jest.fn();
-    useCurrentQuestionTimings.mockReturnValue(createTimings(0));
+    currentQuestionTimings$ = new BehaviorSubject(createTimings(5));
+    mockRound = mock<Round>();
+    mockRound.canStartNextQuestion$ = of(false);
+    mockRound.currentQuestion$ = of(createCurrentQuestion());
 });
 
 test('start question button calls start question function', () => {
-    const mockRound = mock<Round>();
-    useCurrentQuestionTimings.mockReturnValue(createTimings(5));
+    mockRound.canStartNextQuestion$ = of(true);
 
     render(<ExamplePlayerRoundScreen round={mockRound} />);
 
@@ -64,9 +57,7 @@ test('start question button calls start question function', () => {
 });
 
 test('start question button not shown when canStartNextQuestion is false', () => {
-    const mockRound = mock<Round>();
-    useCurrentQuestionTimings.mockReturnValue(createTimings(5));
-    useCanStartNextQuestion.mockReturnValue(false);
+    mockRound.canStartNextQuestion$ = of(false);
 
     render(<ExamplePlayerRoundScreen round={mockRound} />);
 
@@ -76,7 +67,8 @@ test('start question button not shown when canStartNextQuestion is false', () =>
 
 
 test('start question button not shown when question is not ended', () => {
-    const mockRound = mock<Round>();
+    mockRound.canStartNextQuestion$ = of(true);
+    currentQuestionTimings$.next(createTimings(4));
 
     render(<ExamplePlayerRoundScreen round={mockRound} />);
 
@@ -85,8 +77,7 @@ test('start question button not shown when question is not ended', () => {
 });
 
 test('Countdown component is shown when there is a current question', () => {
-    const mockRound = mock<Round>();
-    useCurrentQuestion.mockReturnValue(createCurrentQuestion({
+    mockRound.currentQuestion$ = of(createCurrentQuestion({
         startTime: 1000
     }));
 
@@ -99,15 +90,14 @@ test('Countdown component is shown when there is a current question', () => {
 });
 
 test('AnswerViewer component is shown when there is a current question', () => {
-    const expectedRound = mock<Round>();
     const expectedQuestion = createCurrentQuestion({
         startTime: 1000
     });
-    useCurrentQuestion.mockReturnValue(expectedQuestion);
+    mockRound.currentQuestion$ = of(expectedQuestion);
 
-    render(<ExamplePlayerRoundScreen round={expectedRound} />);
+    render(<ExamplePlayerRoundScreen round={mockRound} />);
 
     expect(screen.getByText('AnswerViewer')).toBeInTheDocument();
 
-    expect(MockAnswerViewer).toBeCalledWith({ round: expectedRound, question: expectedQuestion }, expect.anything());
+    expect(MockAnswerViewer).toBeCalledWith({ round: mockRound, question: expectedQuestion }, expect.anything());
 });

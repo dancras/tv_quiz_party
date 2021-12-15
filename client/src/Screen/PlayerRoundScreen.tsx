@@ -1,22 +1,21 @@
-import { CurrentQuestion } from '../Model/Round';
+import { useObservable } from '../Lib/RxReact';
 import { RoundScreenProps } from './PresenterRoundScreen';
 import { CountdownProps } from '../Component/Countdown';
 import { AnswerViewerProps } from './AnswerViewer';
 import { CommandButtonProps } from '../Component/CommandButton';
 import { QuestionTimings } from '../Model/QuestionTimer';
+import { Observable } from 'rxjs';
 
 function PlayerRoundScreen(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
     AnswerViewer: React.FunctionComponent<AnswerViewerProps>,
     Countdown: React.FunctionComponent<CountdownProps>,
-    useCurrentQuestion: () => CurrentQuestion | null,
-    useCanStartNextQuestion: () => boolean,
-    useCurrentQuestionTimings: () => QuestionTimings,
+    currentQuestionTimings$: Observable<QuestionTimings>,
     { round } : RoundScreenProps
 ) {
-    const currentQuestion = useCurrentQuestion();
-    const timings = useCurrentQuestionTimings();
-    const canStartNextQuestion = useCanStartNextQuestion();
+    const currentQuestion = useObservable(round.currentQuestion$);
+    const timings = useObservable(currentQuestionTimings$);
+    const canStartNextQuestion = useObservable(round.canStartNextQuestion$);
 
     function handleStartQuestionButton() {
         round.startNextQuestion();
