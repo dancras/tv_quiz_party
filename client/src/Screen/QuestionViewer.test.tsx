@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { act } from 'react-dom/test-utils';
-import { BehaviorSubject } from 'rxjs';
 import { CountdownProps } from '../Component/Countdown';
+import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
+import { mockHook } from '../Lib/Test';
 import { Timer } from '../Lib/Timer';
-import { QuestionTimings } from '../Model/QuestionTimer';
 import { createTimings } from '../Model/QuestionTimer.test';
+import { CurrentQuestion } from '../Model/Round';
 import { createCurrentQuestion } from '../Model/Round.test';
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 
@@ -18,7 +19,7 @@ type MockPlayer = {
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
 let MockYouTube: any;
 let mockPlayer: MockPlayer;
-let currentQuestionTimings$: BehaviorSubject<QuestionTimings>;
+let useQuestionTimings: jest.MockedFunction<QuestionTimingsHook<CurrentQuestion>>;
 let mockTimer: MockProxy<Timer>;
 
 beforeEach(() => {
@@ -31,13 +32,21 @@ beforeEach(() => {
         seekTo: jest.fn(),
         getPlayerState: jest.fn()
     };
-    currentQuestionTimings$ = new BehaviorSubject(createTimings(0));
+    useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(0));
     mockTimer = mock<Timer>();
 });
 
 function ExampleQuestionViewer(props: QuestionViewerProps) {
-    return QuestionViewer(MockCountdown, MockYouTube, currentQuestionTimings$, mockTimer, props);
+    return QuestionViewer(MockCountdown, MockYouTube, useQuestionTimings, mockTimer, props);
 }
+
+test('question timings are setup with currentQuestion', () => {
+    const expectedQuestion = createCurrentQuestion();
+
+    render(<ExampleQuestionViewer question={expectedQuestion} />);
+
+    expect(useQuestionTimings).toHaveBeenCalledWith(expectedQuestion);
+});
 
 test('it shows Countdown component', () => {
     const question = createCurrentQuestion({
@@ -88,7 +97,7 @@ test('it plays the video when player is ready and question has started', () => {
     expect(mockPlayer.playVideo).not.toHaveBeenCalled();
 
     act(() => {
-        currentQuestionTimings$.next(createTimings(1));
+        useQuestionTimings.mockReturnValue(createTimings(1));
     });
 
     expect(mockPlayer.playVideo).toHaveBeenCalled();
@@ -112,7 +121,7 @@ test('it does not play if video state is not 5 video cued', () => {
             target: mockPlayer
         });
 
-        currentQuestionTimings$.next(createTimings(1));
+        useQuestionTimings.mockReturnValue(createTimings(1));
     });
 
     expect(mockPlayer.seekTo).not.toHaveBeenCalled();
@@ -138,7 +147,7 @@ test('it seeks forward if player is ready after question has started', () => {
             target: mockPlayer
         });
 
-        currentQuestionTimings$.next(createTimings(1));
+        useQuestionTimings.mockReturnValue(createTimings(1));
     });
 
     expect(mockPlayer.seekTo).toHaveBeenCalledWith(25, true);
@@ -162,7 +171,7 @@ test('it does not play video if question has ended', () => {
             target: mockPlayer
         });
 
-        currentQuestionTimings$.next(createTimings(5));
+        useQuestionTimings.mockReturnValue(createTimings(5));
     });
 
     expect(mockPlayer.seekTo).not.toHaveBeenCalled();

@@ -30,6 +30,6 @@ export function useObservable<T>($source: Observable<T>): T {
     return returnInitialValue ? initialValue : value;
 };
 
-export function ensureObservable<T>($source: Observable<T> | undefined, fallback: T): Observable<T> {
+export function ensureObservable<T, Q>($source: Observable<T> | undefined, fallback: Q): Observable<T | Q> {
     return $source === undefined ? of(fallback) : $source;
 }

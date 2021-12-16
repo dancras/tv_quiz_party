@@ -6,9 +6,7 @@ import { Timer } from '../Lib/Timer';
 import { CurrentQuestion } from '../Model/Round';
 
 import { CountdownProps } from '../Component/Countdown';
-import { useObservable } from '../Lib/RxReact';
-import { Observable } from 'rxjs';
-import { QuestionTimings } from '../Model/QuestionTimer';
+import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
 
 export type QuestionViewerProps = {
     question: CurrentQuestion
@@ -17,7 +15,7 @@ export type QuestionViewerProps = {
 function QuestionViewer(
     Countdown: React.FunctionComponent<CountdownProps>,
     YouTube: React.ComponentClass<YouTubeProps>,
-    currentQuestionTimings$: Observable<QuestionTimings>,
+    useQuestionTimings: QuestionTimingsHook<CurrentQuestion>,
     timer: Timer,
     { question } : QuestionViewerProps
 ) {
@@ -27,7 +25,7 @@ function QuestionViewer(
 
     const [player, setPlayer] = useState<any>(null);
 
-    const timings = useObservable(currentQuestionTimings$);
+    const timings = useQuestionTimings(question);
 
     useEffect(() => {
         if (timings.hasStarted && player && !timings.hasEnded && player.getPlayerState() === 5) {

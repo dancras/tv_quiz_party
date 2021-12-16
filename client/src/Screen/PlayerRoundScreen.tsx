@@ -3,18 +3,18 @@ import { RoundScreenProps } from './PresenterRoundScreen';
 import { CountdownProps } from '../Component/Countdown';
 import { AnswerViewerProps } from './AnswerViewer';
 import { CommandButtonProps } from '../Component/CommandButton';
-import { QuestionTimings } from '../Model/QuestionTimer';
-import { Observable } from 'rxjs';
+import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
+import { CurrentQuestion } from '../Model/Round';
 
 function PlayerRoundScreen(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
     AnswerViewer: React.FunctionComponent<AnswerViewerProps>,
     Countdown: React.FunctionComponent<CountdownProps>,
-    currentQuestionTimings$: Observable<QuestionTimings>,
+    useQuestionTimings: QuestionTimingsHook<CurrentQuestion | undefined>,
     { round } : RoundScreenProps
 ) {
     const currentQuestion = useObservable(round.currentQuestion$);
-    const timings = useObservable(currentQuestionTimings$);
+    const timings = useQuestionTimings((currentQuestion ? currentQuestion : undefined));
     const canStartNextQuestion = useObservable(round.canStartNextQuestion$);
 
     function handleStartQuestionButton() {
@@ -35,7 +35,7 @@ function PlayerRoundScreen(
                 <div>Waiting for host to start...</div>
 
             }
-            { canStartNextQuestion && timings.hasEnded ?
+            { canStartNextQuestion && (!timings || timings.hasEnded) ?
                 <CommandButton onClick={handleStartQuestionButton}>Start Question</CommandButton> :
                 <></>
             }

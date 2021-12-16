@@ -1,10 +1,8 @@
 import React, { useEffect } from 'react';
 
-import { useObservable } from '../Lib/RxReact';
 import { CommandButtonProps } from '../Component/CommandButton';
-import { QuestionTimings } from '../Model/QuestionTimer';
 import Round, { CurrentQuestion } from '../Model/Round';
-import { Observable } from 'rxjs';
+import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
 
 export type AnswerViewerProps = {
     question: CurrentQuestion,
@@ -13,12 +11,12 @@ export type AnswerViewerProps = {
 
 function AnswerViewer(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
-    currentQuestionTimings$: Observable<QuestionTimings>,
+    useQuestionTimings: QuestionTimingsHook<CurrentQuestion>,
     { question, round }: AnswerViewerProps
 ) {
     const [selectedAnswer, setSelectedAnswer] = React.useState<string | null>(null);
 
-    const timings = useObservable(currentQuestionTimings$);
+    const timings = useQuestionTimings(question);
 
     function handleAnswerButton(event: React.MouseEvent<HTMLButtonElement>) {
         const answer = event.currentTarget.getAttribute('data-answer');

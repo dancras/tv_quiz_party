@@ -1,23 +1,22 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mock, MockProxy } from 'jest-mock-extended';
-
+import { of } from 'rxjs';
 import { CommandButtonProps } from '../Component/CommandButton';
-import Round from '../Model/Round';
-import { RoundScreenProps } from './PresenterRoundScreen';
-import PlayerRoundScreen from './PlayerRoundScreen';
 import { CountdownProps } from '../Component/Countdown';
-
+import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
+import { mockHook } from '../Lib/Test';
+import { createTimings } from '../Model/QuestionTimer.test';
+import Round, { CurrentQuestion } from '../Model/Round';
 import { createCurrentQuestion } from '../Model/Round.test';
 import { AnswerViewerProps } from './AnswerViewer';
-import { QuestionTimings } from '../Model/QuestionTimer';
-import { createTimings } from '../Model/QuestionTimer.test';
-import { BehaviorSubject, of } from 'rxjs';
+import PlayerRoundScreen from './PlayerRoundScreen';
+import { RoundScreenProps } from './PresenterRoundScreen';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let MockAnswerViewer: jest.MockedFunction<React.FunctionComponent<AnswerViewerProps>>;
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
-let currentQuestionTimings$: BehaviorSubject<QuestionTimings>;
+let useQuestionTimings: jest.MockedFunction<QuestionTimingsHook<CurrentQuestion | undefined>>;
 let mockRound: MockProxy<Round>;
 
 function ExamplePlayerRoundScreen(
@@ -27,7 +26,7 @@ function ExamplePlayerRoundScreen(
         DummyCommandButton,
         MockAnswerViewer,
         MockCountdown,
-        currentQuestionTimings$,
+        useQuestionTimings,
         props
     );
 }
@@ -38,10 +37,19 @@ beforeEach(() => {
     MockAnswerViewer.mockReturnValue(<div>AnswerViewer</div>);
     MockCountdown = jest.fn();
     MockCountdown.mockReturnValue(<div>Countdown</div>);
-    currentQuestionTimings$ = new BehaviorSubject(createTimings(5));
+    useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion | undefined>>(createTimings(5));
     mockRound = mock<Round>();
     mockRound.canStartNextQuestion$ = of(false);
     mockRound.currentQuestion$ = of(createCurrentQuestion());
+});
+
+test('question timings are setup with currentQuestion', () => {
+    const expectedQuestion = createCurrentQuestion();
+    mockRound.currentQuestion$ = of(expectedQuestion);
+
+    render(<ExamplePlayerRoundScreen round={mockRound} />);
+
+    expect(useQuestionTimings).toHaveBeenCalledWith(expectedQuestion);
 });
 
 test('start question button calls start question function', () => {
@@ -68,7 +76,7 @@ test('start question button not shown when canStartNextQuestion is false', () =>
 
 test('start question button not shown when question is not ended', () => {
     mockRound.canStartNextQuestion$ = of(true);
-    currentQuestionTimings$.next(createTimings(4));
+    useQuestionTimings.mockReturnValue(createTimings(4));
 
     render(<ExamplePlayerRoundScreen round={mockRound} />);
 

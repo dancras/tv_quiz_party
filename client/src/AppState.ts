@@ -10,7 +10,8 @@ export type AppStateEvent =
     { code: 'USER_ID_SET', data: string } |
     { code: 'ACTIVE_LOBBY_UPDATED', data: PlainLobby | null } |
     { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound } |
-    { code: 'CURRENT_QUESTION_UPDATED', data: PlainCurrentQuestionMetadata };
+    { code: 'CURRENT_QUESTION_UPDATED', data: PlainCurrentQuestionMetadata } |
+    { code: 'ACTIVE_ROUND_ENDED', data: PlainRound };
 
 export type AppStateHandler = (next: [AppStateEvent, AppState], i: number) => AppState
 
@@ -42,6 +43,11 @@ export const handleAppStateEvent: AppStateHandler = ([stateEvent, state]) => {
                 state.activeLobby.activeRound.currentQuestion = stateEvent.data;
             }
             return state;
+        case 'ACTIVE_ROUND_ENDED':
+            if (state.activeLobby) {
+                state.activeLobby.activeRound = null;
+            }
+            return state;
     }
 };
 
@@ -54,6 +60,10 @@ export function setupAppState(
 
     if (activeLobby) {
         activeLobby.isHost = userID === activeLobby.hostID;
+
+        if (activeLobby.activeRound) {
+            activeLobby.activeRound.isHost = activeLobby.isHost;
+        }
     }
 
     const state$ = new BehaviorSubject<AppState>({
