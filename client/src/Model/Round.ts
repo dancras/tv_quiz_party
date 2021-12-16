@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { distinctUntilChanged, map, shareReplay } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, shareReplay, takeWhile } from 'rxjs/operators';
 
 export type RoundCmd =
     { cmd: 'StartNextQuestion' } |
@@ -58,16 +58,19 @@ export class Round {
         this._sendCmd = sendCmd;
         this.questions = initialData.questions;
 
-        const hasCurrentQuestionEnded$ = latestData.pipe(
-            map(x => x.currentQuestion ? x.currentQuestion.hasEnded : true)
-        );
+        function createCurrentQuestion(data: PlainCurrentQuestionMetadata): CurrentQuestion {
+            return Object.assign({}, data, initialData.questions[data.i], {
+                hasEnded$: latestData.pipe(
+                    map(x => x.currentQuestion),
+                    filter((x): x is PlainCurrentQuestionMetadata => !!x),
+                    takeWhile(y => y.i === data.i),
+                    map(x => x.hasEnded)
+                )
+            });
+        }
+
         this.currentQuestion$ = latestData.pipe(
-            map(x => x.currentQuestion ?
-                Object.assign({}, x.currentQuestion, initialData.questions[x.currentQuestion.i], {
-                    hasEnded$: hasCurrentQuestionEnded$
-                }) :
-                null
-            ),
+            map(x => x.currentQuestion ? createCurrentQuestion(x.currentQuestion) : null),
             distinctUntilChanged((previous, next) => previous?.i === next?.i),
             shareReplay(1)
         );

@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { filter, map, shareReplay } from 'rxjs/operators';
+import { map, shareReplay, skipWhile, takeWhile } from 'rxjs/operators';
 
 import Round, { PlainRound, RoundCmd } from './Round';
 
@@ -44,7 +44,8 @@ export class Lobby {
         );
         const latestPlainRound = latest.pipe(
             map(x => x.activeRound),
-            filter((x): x is PlainRound => !!x)
+            skipWhile(x => !x),
+            takeWhile((x): x is PlainRound => !!x)
         );
         this.activeRound$ = latest.pipe(
             map(x => x.activeRound ? new LobbyRound(sendCmd, x.activeRound, latestPlainRound) : null)

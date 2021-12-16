@@ -1,4 +1,4 @@
-import { from, of } from 'rxjs';
+import { BehaviorSubject, from, of } from 'rxjs';
 import Lobby, { LobbyCmd, PlainLobby } from './Lobby';
 
 export function createPlainLobby(fieldsUnderTest?: Partial<PlainLobby>): PlainLobby {
@@ -114,4 +114,54 @@ test('activeRound$ uses latestData to construct Round', () => {
 
     expect(RoundConstructor.mock.calls[0][1]).toBe(expectedPlainRound);
     expect(constructorSubscribeSpy).toHaveBeenCalledWith(expectedPlainRound);
+});
+
+test('activeRound$ does not leak details between rounds', () => {
+    const latestData$ = new BehaviorSubject(createPlainLobby({
+        activeRound: {
+            questions: [],
+            currentQuestion: null,
+            isHost: false
+        }
+    }));
+
+    const RoundConstructor = jest.fn();
+
+    const lobby = new Lobby(
+        RoundConstructor,
+        jest.fn(),
+        createPlainLobby(),
+        latestData$
+    );
+
+    lobby.activeRound$.subscribe(jest.fn());
+
+    const actualLatestData$ = RoundConstructor.mock.calls[0][2];
+
+    const subscribeSpy = jest.fn();
+
+    actualLatestData$.subscribe(subscribeSpy);
+
+    latestData$.next(createPlainLobby({
+        activeRound: null
+    }));
+
+    latestData$.next(createPlainLobby({
+        activeRound: {
+            questions: [],
+            currentQuestion: null,
+            isHost: true
+        }
+    }));
+
+    expect(subscribeSpy).toHaveBeenCalledTimes(1);
+    expect(subscribeSpy.mock.calls[0][0].isHost).toEqual(false);
+
+    const nextLatestData$ = RoundConstructor.mock.calls[1][2];
+    const nextSpy = jest.fn();
+
+    nextLatestData$.subscribe(nextSpy);
+
+    expect(nextSpy).toHaveBeenCalledTimes(1);
+    expect(nextSpy.mock.calls[0][0].isHost).toEqual(true);
 });

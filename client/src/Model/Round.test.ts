@@ -286,3 +286,43 @@ test('canStartNextQuestion$ is false for non-host', () => {
 
     expect(subscribeSpy).toBeCalledWith(false);
 });
+
+test('hasEnded does not leak details between questions', () => {
+    const initialData = {
+        questions: [],
+        currentQuestion: null,
+        isHost: false
+    };
+    const latestData = new BehaviorSubject({
+        questions: [],
+        currentQuestion: createPlainCurrentQuestionMetadata({
+            i: 0,
+            hasEnded: true
+        }),
+        isHost: false
+    });
+
+    const round = new Round(sendCommand, initialData, latestData);
+
+    const subscribeSpy = jest.fn();
+
+    return firstValueFrom(round.currentQuestion$).then(currentQuestion => {
+
+        expect(currentQuestion).not.toEqual(null);
+        if (currentQuestion) {
+            currentQuestion.hasEnded$.subscribe(subscribeSpy);
+            latestData.next({
+                questions: [],
+                currentQuestion: createPlainCurrentQuestionMetadata({
+                    i: 1,
+                    hasEnded: false
+                }),
+                isHost: false
+            });
+        }
+
+        expect(subscribeSpy).toHaveBeenCalledWith(true);
+        expect(subscribeSpy).toHaveBeenCalledTimes(1);
+
+    });
+});

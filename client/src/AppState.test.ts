@@ -33,3 +33,21 @@ test('state is updated by the handler function', () => {
         expect(state).toEqual(updatedState);
     });
 });
+
+test('updater function uses a new state copy', () => {
+    const handler: jest.MockedFunction<AppStateHandler> = jest.fn(([stateEvent, state], i) => state);
+    const [, $stateEvent] = setupAppState('user', null, handler);
+
+    const expectedLobby = createPlainLobby();
+
+    const someEvent: AppStateEvent = {
+        code: 'ACTIVE_LOBBY_UPDATED',
+        data: expectedLobby
+    };
+
+    $stateEvent.next(someEvent);
+    $stateEvent.next(someEvent);
+
+    expect(handler.mock.calls[0][0][1]).not.toBe(handler.mock.calls[1][0][1]);
+
+});

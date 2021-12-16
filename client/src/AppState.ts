@@ -1,4 +1,5 @@
 import { Subject, BehaviorSubject, withLatestFrom, map, Observable } from 'rxjs';
+import clone from 'just-clone';
 import { PlainLobby } from './Model/Lobby';
 import { PlainRound, PlainCurrentQuestionMetadata } from './Model/Round';
 
@@ -72,7 +73,7 @@ export function setupAppState(
     });
 
     stateEvents$.pipe(
-        withLatestFrom(state$),
+        withLatestFrom(state$.pipe(map(clone))),
         map(handler)
     ).subscribe((nextState) => {
         state$.next(nextState);
