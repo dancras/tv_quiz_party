@@ -30,7 +30,7 @@ function PlayerRoundScreen(
             { currentQuestion ?
                 <>
                     <Countdown key={key('Countdown')} endsAt={currentQuestion.timestampToStartVideo}></Countdown>
-                    <AnswerViewer key={key('AnswerViewer')} round={round} question={currentQuestion}></AnswerViewer>
+                    <AnswerViewer key={key('AnswerViewer')} question={currentQuestion}></AnswerViewer>
                 </>:
                 <div>Waiting for host to start...</div>
 

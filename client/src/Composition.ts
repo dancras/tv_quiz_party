@@ -22,6 +22,7 @@ import { handleAppCmd, setupCmdBus } from './AppCmd';
 import { setupQuestionTimer } from './Model/QuestionTimer';
 import { QuestionTimingsHook, useQuestionTimings } from './Hook/QuestionTimingsHook';
 import CurrentQuestion from './Model/CurrentQuestion';
+import CurrentQuestionLifecycle from './Model/CurrentQuestionLifecycle';
 
 export function composeApp(handshakeData: HandshakeData): React.FunctionComponent {
     const areCommandsDisabled$ = new BehaviorSubject(false);
@@ -41,7 +42,12 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         handleAppCmd(stateEvents$, [cmd, state]);
     });
 
+    const currentQuestionLifeCycle = new CurrentQuestionLifecycle(
+        (question) => setupQuestionTimer(window, timer, question)
+    );
+
     const activeLobby$ = setupActiveLobby(
+        currentQuestionLifeCycle,
         cmds$.next.bind(cmds$),
         state$.pipe(map(x => x.activeLobby))
     );

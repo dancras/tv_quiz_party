@@ -4,8 +4,7 @@ import { PartiallyApplied1, ConstructorFunction } from '../Lib/Types';
 import CurrentQuestion, { Question, PlainCurrentQuestionMetadata, CurrentQuestionCmd, CurrentQuestionFactory } from './CurrentQuestion';
 
 export type RoundCmd = CurrentQuestionCmd |
-    { cmd: 'StartNextQuestion' } |
-    { cmd: 'LockQuestion' };
+    { cmd: 'StartNextQuestion' };
 
 export type PlainRound = {
     questions: Question[],
@@ -52,10 +51,6 @@ export class Round {
 
     startNextQuestion() {
         this._sendCmd({ cmd: 'StartNextQuestion' });
-    }
-
-    lockQuestion() {
-        this._sendCmd({ cmd: 'LockQuestion' });
     }
 };
 

@@ -1,12 +1,16 @@
+import { mock } from 'jest-mock-extended';
 import { firstValueFrom, from, lastValueFrom, of } from 'rxjs';
 import { setupActiveLobby } from './ActiveLobby';
+import { createPlainCurrentQuestionMetadata, createQuestion } from './CurrentQuestion.test';
+import CurrentQuestionLifecycle from './CurrentQuestionLifecycle';
 import Lobby, { LobbyCmd } from './Lobby';
 
 import { createPlainLobby } from './Lobby.test';
+import { createPlainRound } from './Round.test';
 
 test('null values are passed through from latest', () => {
     const latest = of(null);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(mock<CurrentQuestionLifecycle>(), jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -20,7 +24,7 @@ test('created Lobby instances have correct initial data', () => {
         joinCode: 'lobby-join-code'
     });
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(mock<CurrentQuestionLifecycle>(), jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -44,7 +48,7 @@ test('no new Lobby instance is emit if the id has not changed', () => {
         plainLobby,
         plainLobby_update
     ]);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(mock<CurrentQuestionLifecycle>(), jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -58,7 +62,7 @@ test('created Lobby instances have correct latest data', () => {
         users: ['user-1'],
     });
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(mock<CurrentQuestionLifecycle>(), jest.fn(), latest);
 
     return firstValueFrom(activeLobby$)
         .then((lobby) => lobby ? firstValueFrom(lobby.users$) : [])
@@ -90,7 +94,7 @@ test('adjacent lobby data does not leak into previous Lobby instances', () => {
         plainLobby2_update,
         plainLobby3
     ]);
-    const activeLobby$ = setupActiveLobby(jest.fn(), latest);
+    const activeLobby$ = setupActiveLobby(mock<CurrentQuestionLifecycle>(), jest.fn(), latest);
 
     const subscribeSpy = jest.fn();
     activeLobby$.subscribe(subscribeSpy);
@@ -106,10 +110,32 @@ test('created Lobby instances are passed command bus', () => {
     const plainLobby = createPlainLobby();
     const sendCmdSpy = jest.fn();
     const latest = of(plainLobby);
-    const activeLobby$ = setupActiveLobby(sendCmdSpy, latest);
+    const activeLobby$ = setupActiveLobby(mock<CurrentQuestionLifecycle>(), sendCmdSpy, latest);
 
     return firstValueFrom(activeLobby$).then(lobby => {
         lobby?.exit();
         expect(sendCmdSpy).toBeCalledWith({ cmd: 'ExitLobby' } as LobbyCmd);
+    });
+});
+
+test('created CurrentQuestion instances are passed to CurrentQuestionLifecycle', () => {
+    const mockLifecycle = mock<CurrentQuestionLifecycle>();
+    const plainLobby = createPlainLobby({
+        activeRound: createPlainRound({
+            questions: [createQuestion()],
+            currentQuestion: createPlainCurrentQuestionMetadata({
+                i: 0
+            })
+        })
+    });
+
+    const activeLobby$ = setupActiveLobby(mockLifecycle, jest.fn(), of(plainLobby));
+
+    return firstValueFrom(activeLobby$).then(lobby => {
+        return lobby ? firstValueFrom(lobby.activeRound$) : null;
+    }).then(round => {
+        return round ? firstValueFrom(round.currentQuestion$) : null;
+    }).then(question => {
+        expect(mockLifecycle.setupCurrentQuestion).toHaveBeenCalledWith(question);
     });
 });

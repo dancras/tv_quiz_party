@@ -65,6 +65,9 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
                 break;
 
             case 'EndFinalQuestion':
+                stateEvents$.next({
+                    code: 'ACTIVE_ROUND_ENDED'
+                });
                 break;
 
             default:

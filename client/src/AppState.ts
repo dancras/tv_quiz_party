@@ -13,7 +13,7 @@ export type AppStateEvent =
     { code: 'ACTIVE_LOBBY_UPDATED', data: PlainLobby | null } |
     { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound } |
     { code: 'CURRENT_QUESTION_UPDATED', data: PlainCurrentQuestionMetadata } |
-    { code: 'ACTIVE_ROUND_ENDED', data: PlainRound };
+    { code: 'ACTIVE_ROUND_ENDED' };
 
 export type AppStateHandler = (next: [AppStateEvent, AppState], i: number) => AppState
 

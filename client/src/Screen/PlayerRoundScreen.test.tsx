@@ -108,5 +108,5 @@ test('AnswerViewer component is shown when there is a current question', () => {
 
     expect(screen.getByText('AnswerViewer')).toBeInTheDocument();
 
-    expect(MockAnswerViewer).toBeCalledWith({ round: mockRound, question: expectedQuestion }, expect.anything());
+    expect(MockAnswerViewer).toBeCalledWith({ question: expectedQuestion }, expect.anything());
 });

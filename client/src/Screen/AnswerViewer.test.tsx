@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { mock, MockProxy } from 'jest-mock-extended';
+import { mock } from 'jest-mock-extended';
 import { act } from 'react-dom/test-utils';
 import { of } from 'rxjs';
 import { CommandButtonProps } from '../Component/CommandButton';
@@ -9,11 +9,9 @@ import { mockHook } from '../Lib/Test';
 import CurrentQuestion from '../Model/CurrentQuestion';
 import { createCurrentQuestion } from '../Model/CurrentQuestion.test';
 import { createTimings } from '../Model/QuestionTimer.test';
-import Round from '../Model/Round';
 import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
-let mockRound: MockProxy<Round>;
 let useQuestionTimings: jest.MockedFunction<QuestionTimingsHook<CurrentQuestion>>;
 
 function ExampleAnswerViewer(props: AnswerViewerProps) {
@@ -22,14 +20,13 @@ function ExampleAnswerViewer(props: AnswerViewerProps) {
 
 beforeEach(() => {
     DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
-    mockRound = mock<Round>();
     useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(0));
 });
 
 test('question timings are setup with currentQuestion', () => {
     const expectedQuestion = createCurrentQuestion();
 
-    render(<ExampleAnswerViewer round={mockRound} question={expectedQuestion} />);
+    render(<ExampleAnswerViewer question={expectedQuestion} />);
 
     expect(useQuestionTimings).toHaveBeenCalledWith(expectedQuestion);
 });
@@ -44,7 +41,7 @@ test('it displays answers at questionDisplayTime', () => {
 
     useQuestionTimings.mockReturnValue(createTimings(1));
 
-    render(<ExampleAnswerViewer round={mockRound} question={question} />);
+    render(<ExampleAnswerViewer question={question} />);
 
     expect(screen.queryByText('Answer 1')).not.toBeInTheDocument();
     expect(screen.queryByText('Answer 2')).not.toBeInTheDocument();
@@ -68,7 +65,7 @@ test('it indicates selected answer', () => {
 
     useQuestionTimings.mockReturnValue(createTimings(2));
 
-    render(<ExampleAnswerViewer round={mockRound} question={question} />);
+    render(<ExampleAnswerViewer question={question} />);
 
     const answerElement = screen.getByText('Answer 1');
 
@@ -85,7 +82,7 @@ test('it calls answerQuestion with clicked answerIndex', () => {
 
     useQuestionTimings.mockReturnValue(createTimings(2));
 
-    render(<ExampleAnswerViewer round={mockRound} question={mockQuestion} />);
+    render(<ExampleAnswerViewer question={mockQuestion} />);
 
     const answerElement = screen.getByText('Answer 2');
     userEvent.click(answerElement);
@@ -100,42 +97,12 @@ test('it disables answering at answerLockTime', () => {
 
     useQuestionTimings.mockReturnValue(createTimings(3));
 
-    render(<ExampleAnswerViewer round={mockRound} question={mockQuestion} />);
+    render(<ExampleAnswerViewer question={mockQuestion} />);
 
     const answerElement = screen.getByText('Answer 1');
     userEvent.click(answerElement);
 
     expect(mockQuestion.answerQuestion).not.toHaveBeenCalled();
-});
-
-test('it calls lockQuestion at answerLockTime if question has not ended', () => {
-    const question = createCurrentQuestion({
-        hasEnded: false
-    });
-
-    useQuestionTimings.mockReturnValue(createTimings(2));
-
-    render(<ExampleAnswerViewer round={mockRound} question={question} />);
-
-    expect(mockRound.lockQuestion).not.toHaveBeenCalled();
-
-    act(() => {
-        useQuestionTimings.mockReturnValue(createTimings(3));
-    });
-
-    expect(mockRound.lockQuestion).toHaveBeenCalled();
-});
-
-test('it does not call lockQuestion if question has ended', () => {
-    const question = createCurrentQuestion({
-        hasEnded: true
-    });
-
-    useQuestionTimings.mockReturnValue(createTimings(3));
-
-    render(<ExampleAnswerViewer round={mockRound} question={question} />);
-
-    expect(mockRound.lockQuestion).not.toHaveBeenCalled();
 });
 
 test('it reveals answer at answerRevealTime', () => {
@@ -147,7 +114,7 @@ test('it reveals answer at answerRevealTime', () => {
     });
 
     useQuestionTimings.mockReturnValue(createTimings(2));
-    render(<ExampleAnswerViewer round={mockRound} question={question} />);
+    render(<ExampleAnswerViewer question={question} />);
 
     const correctAnswerElement = screen.getByText('Answer 3');
     userEvent.click(correctAnswerElement);

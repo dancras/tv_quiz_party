@@ -1,6 +1,7 @@
 import { Observable } from 'rxjs';
 import { distinctUntilChanged, filter, map, skipWhile, takeWhile } from 'rxjs/operators';
 import CurrentQuestion from './CurrentQuestion';
+import CurrentQuestionLifecycle from './CurrentQuestionLifecycle';
 
 import Lobby, { PlainLobby, LobbyCmd } from './Lobby';
 import Round, { PlainRound } from './Round';
@@ -8,6 +9,7 @@ import Round, { PlainRound } from './Round';
 export type LobbyUpdateFn = (lobby: PlainLobby | PlainRound) => void
 
 export function setupActiveLobby(
+    currentQuestionLifecycle: CurrentQuestionLifecycle,
     sendCmd: (cmd: LobbyCmd) => void,
     latest: Observable<PlainLobby | null>
 ): Observable<Lobby | null> {
@@ -16,7 +18,11 @@ export function setupActiveLobby(
         map(x => x ?
             new Lobby(
                 (...roundArgs) => new Round(
-                    (...currentQuestionArgs) => new CurrentQuestion(...currentQuestionArgs),
+                    (...currentQuestionArgs) => {
+                        const currentQuestion = new CurrentQuestion(...currentQuestionArgs);
+                        currentQuestionLifecycle.setupCurrentQuestion(currentQuestion);
+                        return currentQuestion;
+                    },
                     ...roundArgs
                 ),
                 sendCmd,

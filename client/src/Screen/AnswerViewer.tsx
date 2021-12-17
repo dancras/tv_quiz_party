@@ -1,20 +1,18 @@
-import React, { useEffect } from 'react';
+import { useState } from 'react';
 import { CommandButtonProps } from '../Component/CommandButton';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
 import CurrentQuestion from '../Model/CurrentQuestion';
-import Round from '../Model/Round';
 
 export type AnswerViewerProps = {
-    question: CurrentQuestion,
-    round: Round
+    question: CurrentQuestion
 }
 
 function AnswerViewer(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
     useQuestionTimings: QuestionTimingsHook<CurrentQuestion>,
-    { question, round }: AnswerViewerProps
+    { question }: AnswerViewerProps
 ) {
-    const [selectedAnswerIndex, setSelectedAnswerIndex] = React.useState<number | null>(null);
+    const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
 
     const timings = useQuestionTimings(question);
 
@@ -56,12 +54,6 @@ function AnswerViewer(
 
         return classes.join(' ');
     }
-
-    useEffect(() => {
-        if (timings.lockAnswers) {
-            question.hasEndedOnServer$.subscribe(hasEnded => hasEnded ? void(0) : round.lockQuestion()).unsubscribe();
-        }
-    });
 
     return (
         <div className={getContainerClasses()}>

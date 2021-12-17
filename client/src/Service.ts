@@ -138,10 +138,7 @@ export function setupLobbyWebSocket(stateEvents$: Subject<AppStateEvent>, id: st
                 });
                 break;
             case 'ROUND_ENDED':
-                stateEvents$.next({
-                    code: 'ACTIVE_ROUND_ENDED',
-                    data: createRoundFromRoundData(message.data)
-                });
+                // TODO: Some kind of pending previous round state?
                 break;
             default:
                 // "Not assignable to never" error indicates non-exhaustive switch
