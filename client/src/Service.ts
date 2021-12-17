@@ -4,14 +4,16 @@ import { post, subscribeToServer } from './Lib/Request';
 
 import { AppStateEvent } from './AppState';
 import { PlainLobby } from './Model/Lobby';
-import { PlainRound, PlainCurrentQuestionMetadata, Question } from './Model/Round';
+import { PlainCurrentQuestionMetadata, Question } from './Model/CurrentQuestion';
+import { PlainRound } from './Model/Round';
 
 export type ServerMessage =
     { code: 'USER_JOINED', data: any } |
     { code: 'USER_EXITED', data: any } |
     { code: 'LOBBY_CLOSED', data: null } |
     { code: 'ROUND_STARTED', data: any } |
-    { code: 'QUESTION_STARTED', data: any };
+    { code: 'QUESTION_STARTED', data: any } |
+    { code: 'ROUND_ENDED', data: any };
 
 export type HandshakeData = {
     userID: string,
@@ -135,6 +137,16 @@ export function setupLobbyWebSocket(stateEvents$: Subject<AppStateEvent>, id: st
                     data: createPlainCurrentQuestionMetadata(message.data)
                 });
                 break;
+            case 'ROUND_ENDED':
+                stateEvents$.next({
+                    code: 'ACTIVE_ROUND_ENDED',
+                    data: createRoundFromRoundData(message.data)
+                });
+                break;
+            default:
+                // "Not assignable to never" error indicates non-exhaustive switch
+                const checkExhaustive: never = message;
+                console.error('Unhandled ServerMessage', checkExhaustive);
         }
     });
 }

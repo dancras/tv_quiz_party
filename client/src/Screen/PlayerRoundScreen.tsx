@@ -4,7 +4,7 @@ import { CountdownProps } from '../Component/Countdown';
 import { AnswerViewerProps } from './AnswerViewer';
 import { CommandButtonProps } from '../Component/CommandButton';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
-import { CurrentQuestion } from '../Model/Round';
+import CurrentQuestion from '../Model/CurrentQuestion';
 
 function PlayerRoundScreen(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
@@ -29,7 +29,7 @@ function PlayerRoundScreen(
         <div>
             { currentQuestion ?
                 <>
-                    <Countdown key={key('Countdown')} endsAt={currentQuestion.startTime}></Countdown>
+                    <Countdown key={key('Countdown')} endsAt={currentQuestion.timestampToStartVideo}></Countdown>
                     <AnswerViewer key={key('AnswerViewer')} round={round} question={currentQuestion}></AnswerViewer>
                 </>:
                 <div>Waiting for host to start...</div>

@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 import { map, shareReplay, skipWhile, takeWhile } from 'rxjs/operators';
 
-import Round, { PlainRound, RoundCmd } from './Round';
+import Round, { PlainRound, RoundCmd, RoundFactory } from './Round';
 
 export type LobbyCmd =
     RoundCmd |
@@ -28,7 +28,7 @@ export class Lobby {
     private _sendCmd: (cmd: LobbyCmd) => void;
 
     constructor(
-        LobbyRound: typeof Round,
+        roundFactory: RoundFactory,
         sendCmd: (cmd: LobbyCmd) => void,
         initial: PlainLobby,
         latest: Observable<PlainLobby>
@@ -48,7 +48,7 @@ export class Lobby {
             takeWhile((x): x is PlainRound => !!x)
         );
         this.activeRound$ = latest.pipe(
-            map(x => x.activeRound ? new LobbyRound(sendCmd, x.activeRound, latestPlainRound) : null)
+            map(x => x.activeRound ? roundFactory(sendCmd, x.activeRound, latestPlainRound) : null)
         );
     }
 

@@ -1,13 +1,8 @@
-import { BehaviorSubject, firstValueFrom, from, of } from 'rxjs';
-
-import Round, {
-    CurrentQuestion,
-    PlainCurrentQuestion,
-    PlainCurrentQuestionMetadata,
-    PlainRound,
-    Question,
-    RoundCmd
-} from './Round';
+import { mock } from 'jest-mock-extended';
+import { BehaviorSubject, firstValueFrom, of } from 'rxjs';
+import CurrentQuestion, { CurrentQuestionFactory } from './CurrentQuestion';
+import { createQuestion, createPlainCurrentQuestion, createPlainCurrentQuestionMetadata } from './CurrentQuestion.test';
+import Round, { PlainRound, RoundCmd } from './Round';
 
 const EMPTY_PLAIN_ROUND: PlainRound = {
     questions: [],
@@ -15,51 +10,22 @@ const EMPTY_PLAIN_ROUND: PlainRound = {
     isHost: false
 };
 
+let currentQuestionFactory: jest.MockedFunction<CurrentQuestionFactory>;
 let sendCommand: jest.MockedFunction<(cmd: RoundCmd) => void>;
 
-function createQuestion(fieldsUnderTest?: Partial<Question>): Question {
-    return Object.assign({
-        videoID: '',
-        questionStartTime: 0,
-        questionDisplayTime: 0,
-        answerLockTime: 0,
-        answerRevealTime: 0,
-        endTime: 0,
-        answerText1: '',
-        answerText2: '',
-        answerText3: '',
-        correctAnswer: ''
-    }, fieldsUnderTest);
-}
-
-function createPlainCurrentQuestionMetadata(fieldsUnderTest?: Partial<PlainCurrentQuestionMetadata>): PlainCurrentQuestionMetadata {
-    return Object.assign({
-        i: 0,
-        startTime: 0,
-        hasEnded: false,
-    }, fieldsUnderTest);
-}
-
-function createPlainCurrentQuestion(fieldsUnderTest?: Partial<PlainCurrentQuestionMetadata>): PlainCurrentQuestion {
+export function createPlainRound(fieldsUnderTest?: Partial<PlainRound>): PlainRound {
     return Object.assign(
-        createQuestion(),
-        createPlainCurrentQuestionMetadata(),
-        fieldsUnderTest
-    );
-}
-
-export function createCurrentQuestion(fieldsUnderTest?: Partial<PlainCurrentQuestion>): CurrentQuestion {
-    return Object.assign(
-        createQuestion(),
-        createPlainCurrentQuestionMetadata(),
         {
-            hasEnded$: of(fieldsUnderTest?.hasEnded || false),
+            questions: [],
+            currentQuestion: null,
+            isHost: false
         },
         fieldsUnderTest
     );
 }
 
 beforeEach(() => {
+    currentQuestionFactory = jest.fn();
     sendCommand = jest.fn();
 });
 
@@ -75,148 +41,173 @@ test('questions is exposed from initialData', () => {
         isHost: false
     });
 
-    const round = new Round(sendCommand, initialData, latestData);
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
 
     expect(round.questions).toEqual(initialData.questions);
 });
 
 test('startNextQuestion sends correct command', () => {
-    const round = new Round(sendCommand, EMPTY_PLAIN_ROUND, of(EMPTY_PLAIN_ROUND));
+    const round = new Round(currentQuestionFactory, sendCommand, EMPTY_PLAIN_ROUND, of(EMPTY_PLAIN_ROUND));
 
     round.startNextQuestion();
 
     expect(sendCommand).toBeCalledWith({ cmd: 'StartNextQuestion' } as RoundCmd);
 });
 
-test('currentQuestion$ combines CurrentQuestionMetadata and Question', () => {
-    const initialData = {
-        questions: [{
-            videoID: 'example-video',
-            questionStartTime: 1,
-            questionDisplayTime: 2,
-            answerLockTime: 3,
-            answerRevealTime: 4,
-            endTime: 5,
-            answerText1: '',
-            answerText2: '',
-            answerText3: '',
-            correctAnswer: ''
-        }],
-        currentQuestion: null,
-        isHost: false
-    };
-    const expectedQuestion = {
+test('currentQuestion$ uses currentQuestionFactory to create CurrentQuestion', () => {
+    const expectedQuestionsData = [{
+        videoID: 'example-video',
+        questionStartTime: 1,
+        questionDisplayTime: 2,
+        answerLockTime: 3,
+        answerRevealTime: 4,
+        endTime: 5,
+        answerText1: '',
+        answerText2: '',
+        answerText3: '',
+        correctAnswer: ''
+    }];
+    const expectedInitialMetaData = {
         i: 0,
         startTime: 10,
         hasEnded: true
+    };
+    const initialData = {
+        questions: expectedQuestionsData,
+        currentQuestion: null,
+        isHost: false
     };
     const latestData = of({
         // Question data is fixed so we don't use latestData
         questions: [],
-        currentQuestion: expectedQuestion,
+        currentQuestion: expectedInitialMetaData,
         isHost: false
     });
-    const round = new Round(sendCommand, initialData, latestData);
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
+
+    const mockCurrentQuestion = mock<CurrentQuestion>();
+    currentQuestionFactory.mockReturnValue(mockCurrentQuestion);
 
     return firstValueFrom(round.currentQuestion$).then((actualQuestion) => {
-        expect(actualQuestion).toEqual(expect.objectContaining({
-            i: 0,
-            videoID: 'example-video',
-            startTime: 10,
-            questionStartTime: 1,
-            questionDisplayTime: 2,
-            answerLockTime: 3,
-            answerRevealTime: 4,
-            endTime: 5,
-            answerText1: '',
-            answerText2: '',
-            answerText3: '',
-            correctAnswer: ''
-        }));
+        expect(actualQuestion).toEqual(mockCurrentQuestion);
 
-        return actualQuestion && firstValueFrom(actualQuestion.hasEnded$);
-    }).then((actualHasEnded) => {
-        expect(actualHasEnded).toEqual(true);
+        expect(currentQuestionFactory).toHaveBeenCalledWith(
+            sendCommand,
+            expectedQuestionsData,
+            expectedInitialMetaData,
+            expect.anything()
+        );
     });
 });
 
-test('currentQuestion$ sends latest to new subscribers', () => {
-    const initialData = {
-        questions: [{
-            videoID: 'example-video',
-            questionStartTime: 1,
-            questionDisplayTime: 2,
-            answerLockTime: 3,
-            answerRevealTime: 4,
-            endTime: 5,
-            answerText1: '',
-            answerText2: '',
-            answerText3: '',
-            correctAnswer: ''
-        }],
-        currentQuestion: null,
-        isHost: false
-    };
-    const expectedQuestion = {
-        i: 0,
-        startTime: 10,
-        hasEnded: true
-    };
-    const latestData = from([
-        {
-            questions: [],
-            currentQuestion: null,
-            isHost: false
-        },
-        {
-            questions: [],
-            currentQuestion: expectedQuestion,
-            isHost: false
-        }
-    ]);
-    const round = new Round(sendCommand, initialData, latestData);
+test('currentQuestion$ passes relevant latest data to currentQuestionFactory', () => {
+    const initialData = createPlainRound({
+        questions: [createQuestion(), createQuestion()]
+    });
+
+    const latestData$ = new BehaviorSubject(createPlainRound({
+        currentQuestion: createPlainCurrentQuestionMetadata({
+            i: 0,
+            hasEnded: false
+        })
+    }));
+
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData$);
 
     round.currentQuestion$.subscribe(() => {
-        // Consume all the values before testing another subscription
+        // Make the stream 'hot' so that currentQuestionFactory will be called
     });
 
-    return firstValueFrom(round.currentQuestion$).then((actualQuestion) => {
-        expect(actualQuestion?.i).toEqual(expectedQuestion.i);
-        expect(actualQuestion?.videoID).toEqual('example-video');
-    });
+    const factoryData$ = currentQuestionFactory.mock.calls[0][3];
+    const factoryDataSpy = jest.fn();
+    factoryData$.subscribe(factoryDataSpy);
+
+    latestData$.next(createPlainRound({
+        currentQuestion: createPlainCurrentQuestionMetadata({
+            i: 0,
+            hasEnded: true
+        })
+    }));
+
+    expect(factoryDataSpy).toHaveBeenNthCalledWith(1, expect.objectContaining({
+        i: 0,
+        hasEnded: false
+    }));
+    expect(factoryDataSpy).toHaveBeenNthCalledWith(2, expect.objectContaining({
+        i: 0,
+        hasEnded: true
+    }));
+    expect(factoryDataSpy).toHaveBeenCalledTimes(2);
 });
 
-test('currentQuestion$ does not send update if question index is the same', () => {
-    const initialData = {
-        questions: [createQuestion()],
-        currentQuestion: null,
-        isHost: false
-    };
-    const latestData = from([
-        {
-            questions: [],
-            currentQuestion: createPlainCurrentQuestion({
-                i: 0,
-                hasEnded: false
-            }),
-            isHost: false
-        },
-        {
-            questions: [],
-            currentQuestion: createPlainCurrentQuestion({
-                i: 0,
-                hasEnded: true
-            }),
-            isHost: false
-        }
-    ]);
-    const round = new Round(sendCommand, initialData, latestData);
+test('currentQuestion$ is not updated for latest data with the same question index', () => {
+    const initialData = createPlainRound({
+        questions: [createQuestion()]
+    });
 
-    const subscribeSpy = jest.fn();
+    const latestData$ = new BehaviorSubject(createPlainRound({
+        currentQuestion: createPlainCurrentQuestionMetadata({
+            i: 0,
+            hasEnded: false
+        })
+    }));
 
-    round.currentQuestion$.subscribe(subscribeSpy);
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData$);
 
-    expect(subscribeSpy).toBeCalledTimes(1);
+    const currentQuestionSpy = jest.fn();
+    round.currentQuestion$.subscribe(currentQuestionSpy);
+
+    latestData$.next(createPlainRound({
+        currentQuestion: createPlainCurrentQuestionMetadata({
+            i: 0,
+            hasEnded: true
+        })
+    }));
+
+    expect(currentQuestionFactory).toHaveBeenCalledTimes(1);
+    expect(currentQuestionSpy).toHaveBeenCalledTimes(1);
+});
+
+test('currentQuestion$ does not leak data between questions', () => {
+    const initialData = createPlainRound({
+        questions: [createQuestion(), createQuestion()]
+    });
+
+    const latestData$ = new BehaviorSubject(createPlainRound({
+        currentQuestion: createPlainCurrentQuestionMetadata({
+            i: 0,
+            hasEnded: false
+        })
+    }));
+
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData$);
+
+    round.currentQuestion$.subscribe(() => {
+        // Make the stream 'hot' so that currentQuestionFactory will be called
+    });
+
+    const firstQuestionLatestData$ = currentQuestionFactory.mock.calls[0][3];
+    const firstQuestionSpy = jest.fn();
+    firstQuestionLatestData$.subscribe(firstQuestionSpy);
+
+    latestData$.next(createPlainRound({
+        currentQuestion: createPlainCurrentQuestionMetadata({
+            i: 1,
+            hasEnded: false
+        })
+    }));
+
+    const secondQuestionLatestData$ = currentQuestionFactory.mock.calls[1][3];
+    const secondQuestionSpy = jest.fn();
+    secondQuestionLatestData$.subscribe(secondQuestionSpy);
+
+    expect(firstQuestionSpy).toHaveBeenCalledTimes(1);
+
+    expect(secondQuestionSpy).toHaveBeenNthCalledWith(1, expect.objectContaining({
+        i: 1,
+        hasEnded: false
+    }));
+    expect(secondQuestionSpy).toHaveBeenCalledTimes(1);
 });
 
 test('canStartNextQuestion$ is true for host with null or ended currentQuestion', () => {
@@ -232,7 +223,7 @@ test('canStartNextQuestion$ is true for host with null or ended currentQuestion'
         isHost: true
     });
 
-    const round = new Round(sendCommand, initialData, latestData);
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
 
     const subscribeSpy = jest.fn();
 
@@ -278,51 +269,11 @@ test('canStartNextQuestion$ is false for non-host', () => {
         isHost: false
     });
 
-    const round = new Round(sendCommand, initialData, latestData);
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
 
     const subscribeSpy = jest.fn();
 
     round.canStartNextQuestion$.subscribe(subscribeSpy);
 
     expect(subscribeSpy).toBeCalledWith(false);
-});
-
-test('hasEnded does not leak details between questions', () => {
-    const initialData = {
-        questions: [],
-        currentQuestion: null,
-        isHost: false
-    };
-    const latestData = new BehaviorSubject({
-        questions: [],
-        currentQuestion: createPlainCurrentQuestionMetadata({
-            i: 0,
-            hasEnded: true
-        }),
-        isHost: false
-    });
-
-    const round = new Round(sendCommand, initialData, latestData);
-
-    const subscribeSpy = jest.fn();
-
-    return firstValueFrom(round.currentQuestion$).then(currentQuestion => {
-
-        expect(currentQuestion).not.toEqual(null);
-        if (currentQuestion) {
-            currentQuestion.hasEnded$.subscribe(subscribeSpy);
-            latestData.next({
-                questions: [],
-                currentQuestion: createPlainCurrentQuestionMetadata({
-                    i: 1,
-                    hasEnded: false
-                }),
-                isHost: false
-            });
-        }
-
-        expect(subscribeSpy).toHaveBeenCalledWith(true);
-        expect(subscribeSpy).toHaveBeenCalledTimes(1);
-
-    });
 });

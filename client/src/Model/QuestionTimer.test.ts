@@ -3,7 +3,7 @@ import { firstValueFrom } from 'rxjs';
 import { Animator, createTestDirector } from '../Lib/Animator';
 import { Timer } from '../Lib/Timer';
 import { QuestionTimings, setupQuestionTimer } from './QuestionTimer';
-import { createCurrentQuestion } from './Round.test';
+import { createCurrentQuestion } from './CurrentQuestion.test';
 
 let mockAnimator: MockProxy<Animator>;
 let mockTimer: MockProxy<Timer>;
@@ -45,7 +45,7 @@ test('all properties are false before question has started', () => {
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 
-    mockTimer.now.mockReturnValue(question.startTime - 1);
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo - 1);
     animate();
 
     return firstValueFrom(questionTimings$).then(timings => {
@@ -60,7 +60,7 @@ test('hasStarted is true when we pass startTime', () => {
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 
-    mockTimer.now.mockReturnValue(question.startTime);
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo);
     animate();
 
     return firstValueFrom(questionTimings$).then(timings => {
@@ -68,14 +68,14 @@ test('hasStarted is true when we pass startTime', () => {
     });
 });
 
-test('displayAnswers is true when we pass questionDisplayTime', () => {
+test('displayAnswers is true when we pass videoShowingAnswerOptionsPosition', () => {
     const animate = createTestDirector(mockAnimator);
 
     const question = createQuestionWithTimes();
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 
-    mockTimer.now.mockReturnValue(question.startTime + seconds(question.questionDisplayTime - question.questionStartTime));
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo + seconds(question.videoShowingAnswerOptionsPosition - question.videoStartPosition));
     animate();
 
     return firstValueFrom(questionTimings$).then(timings => {
@@ -83,14 +83,14 @@ test('displayAnswers is true when we pass questionDisplayTime', () => {
     });
 });
 
-test('lockAnswers is true when we pass answerLockTime', () => {
+test('lockAnswers is true when we pass videoAnsweringLockedPosition', () => {
     const animate = createTestDirector(mockAnimator);
 
     const question = createQuestionWithTimes();
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 
-    mockTimer.now.mockReturnValue(question.startTime + seconds(question.answerLockTime - question.questionStartTime));
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo + seconds(question.videoAnsweringLockedPosition - question.videoStartPosition));
     animate();
 
     return firstValueFrom(questionTimings$).then(timings => {
@@ -98,14 +98,14 @@ test('lockAnswers is true when we pass answerLockTime', () => {
     });
 });
 
-test('revealAnswer is true when we pass answerRevealTime', () => {
+test('revealAnswer is true when we pass videoAnswerRevealedPostion', () => {
     const animate = createTestDirector(mockAnimator);
 
     const question = createQuestionWithTimes();
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 
-    mockTimer.now.mockReturnValue(question.startTime + seconds(question.answerRevealTime - question.questionStartTime));
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo + seconds(question.videoAnswerRevealedPostion - question.videoStartPosition));
     animate();
 
     return firstValueFrom(questionTimings$).then(timings => {
@@ -113,14 +113,14 @@ test('revealAnswer is true when we pass answerRevealTime', () => {
     });
 });
 
-test('hasEnded is true when we pass endTime', () => {
+test('hasEnded is true when we pass videoEndPosition', () => {
     const animate = createTestDirector(mockAnimator);
 
     const question = createQuestionWithTimes();
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 
-    mockTimer.now.mockReturnValue(question.startTime + seconds(question.endTime - question.questionStartTime));
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo + seconds(question.videoEndPosition - question.videoStartPosition));
     animate();
 
     return firstValueFrom(questionTimings$).then(timings => {
@@ -132,7 +132,7 @@ test('updates are notified in successive animation frames', () => {
     const animate = createTestDirector(mockAnimator);
     const question = createQuestionWithTimes();
 
-    mockTimer.now.mockReturnValue(question.startTime - 1);
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo - 1);
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 
@@ -144,7 +144,7 @@ test('updates are notified in successive animation frames', () => {
     }));
 
     timingsSpy.mockClear();
-    mockTimer.now.mockReturnValue(question.startTime);
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo);
     animate();
 
     expect(timingsSpy).toHaveBeenCalledWith(expect.objectContaining({
@@ -152,7 +152,7 @@ test('updates are notified in successive animation frames', () => {
     }));
 
     timingsSpy.mockClear();
-    mockTimer.now.mockReturnValue(question.startTime + 1);
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo + 1);
     animate();
 
     expect(timingsSpy).not.toHaveBeenCalled();
@@ -161,7 +161,7 @@ test('updates are notified in successive animation frames', () => {
 test('subscriptions to the same timings are shared', () => {
     const question = createQuestionWithTimes();
 
-    mockTimer.now.mockReturnValue(question.startTime - 1);
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo - 1);
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 
@@ -174,7 +174,7 @@ test('subscriptions to the same timings are shared', () => {
 test('animation is cancelled when last subscriber is removed', () => {
     const question = createQuestionWithTimes();
 
-    mockTimer.now.mockReturnValue(question.startTime - 1);
+    mockTimer.now.mockReturnValue(question.timestampToStartVideo - 1);
 
     const questionTimings$ = setupQuestionTimer(mockAnimator, mockTimer, question);
 

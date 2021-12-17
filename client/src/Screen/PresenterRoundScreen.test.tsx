@@ -5,7 +5,7 @@ import Round, { CurrentQuestion } from '../Model/Round';
 import PresenterRoundScreen, { RoundScreenProps } from './PresenterRoundScreen';
 import { QuestionViewerProps } from './QuestionViewer';
 
-import { createCurrentQuestion } from '../Model/Round.test';
+import { createCurrentQuestion } from '../Model/CurrentQuestion.test';
 import { BehaviorSubject } from 'rxjs';
 
 let DummyQuestionViewer: React.FunctionComponent<QuestionViewerProps>;

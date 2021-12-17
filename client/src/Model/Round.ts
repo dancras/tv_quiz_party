@@ -1,10 +1,11 @@
 import { Observable } from 'rxjs';
 import { distinctUntilChanged, filter, map, shareReplay, takeWhile } from 'rxjs/operators';
+import { PartiallyApplied1, ConstructorFunction } from '../Lib/Types';
+import CurrentQuestion, { Question, PlainCurrentQuestionMetadata, CurrentQuestionCmd, CurrentQuestionFactory } from './CurrentQuestion';
 
-export type RoundCmd =
+export type RoundCmd = CurrentQuestionCmd |
     { cmd: 'StartNextQuestion' } |
-    { cmd: 'AnswerQuestion', data: string } |
-    { cmd: 'EndQuestion' };
+    { cmd: 'LockQuestion' };
 
 export type PlainRound = {
     questions: Question[],
@@ -12,37 +13,7 @@ export type PlainRound = {
     isHost: boolean
 };
 
-export type Seconds = number;
-export type Milliseconds = number;
-
-export type Question = {
-    videoID: string,
-    questionStartTime: Seconds,
-    questionDisplayTime: Seconds,
-    answerLockTime: Seconds,
-    answerRevealTime: Seconds,
-    endTime: Seconds,
-    answerText1: string,
-    answerText2: string,
-    answerText3: string,
-    correctAnswer: string
-};
-
-export type PlainCurrentQuestionMetadata = {
-    i: number,
-    startTime: Milliseconds,
-    hasEnded: boolean
-}
-
-export type PlainCurrentQuestion = PlainCurrentQuestionMetadata & Question;
-
-export type CurrentQuestionMetadata = {
-    i: number,
-    startTime: Milliseconds,
-    hasEnded$: Observable<boolean>
-}
-
-export type CurrentQuestion = CurrentQuestionMetadata & Question;
+export type RoundFactory = PartiallyApplied1<ConstructorFunction<typeof Round>>;
 
 export class Round {
     private _sendCmd: (cmd: RoundCmd) => void;
@@ -51,6 +22,7 @@ export class Round {
     canStartNextQuestion$: Observable<boolean>;
 
     constructor(
+        currentQuestionFactory: CurrentQuestionFactory,
         sendCmd: (cmd: RoundCmd) => void,
         initialData: PlainRound,
         latestData: Observable<PlainRound>
@@ -58,20 +30,18 @@ export class Round {
         this._sendCmd = sendCmd;
         this.questions = initialData.questions;
 
-        function createCurrentQuestion(data: PlainCurrentQuestionMetadata): CurrentQuestion {
-            return Object.assign({}, data, initialData.questions[data.i], {
-                hasEnded$: latestData.pipe(
-                    map(x => x.currentQuestion),
-                    filter((x): x is PlainCurrentQuestionMetadata => !!x),
-                    takeWhile(y => y.i === data.i),
-                    map(x => x.hasEnded)
-                )
-            });
+        function createCurrentQuestion(initialMetaData: PlainCurrentQuestionMetadata): CurrentQuestion {
+            return currentQuestionFactory(sendCmd, initialData.questions, initialMetaData, latestData.pipe(
+                map(x => x.currentQuestion),
+                filter((x): x is PlainCurrentQuestionMetadata => !!x),
+                takeWhile(y => y.i === initialMetaData.i)
+            ));
         }
 
         this.currentQuestion$ = latestData.pipe(
-            map(x => x.currentQuestion ? createCurrentQuestion(x.currentQuestion) : null),
+            map(x => x.currentQuestion),
             distinctUntilChanged((previous, next) => previous?.i === next?.i),
+            map(x => x ? createCurrentQuestion(x) : null),
             shareReplay(1)
         );
 
@@ -84,12 +54,8 @@ export class Round {
         this._sendCmd({ cmd: 'StartNextQuestion' });
     }
 
-    answerQuestion(answer: string) {
-        this._sendCmd({ cmd: 'AnswerQuestion', data: answer });
-    }
-
-    endQuestion() {
-        this._sendCmd({ cmd: 'EndQuestion' });
+    lockQuestion() {
+        this._sendCmd({ cmd: 'LockQuestion' });
     }
 };
 

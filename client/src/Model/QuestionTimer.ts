@@ -3,7 +3,7 @@ import equals from 'shallow-equals';
 
 import { Animator } from '../Lib/Animator';
 import { Timer } from '../Lib/Timer';
-import { CurrentQuestion } from './Round';
+import CurrentQuestion from './CurrentQuestion';
 
 export type QuestionTimings = {
     hasStarted: boolean,
@@ -20,7 +20,7 @@ export function setupQuestionTimer(
 ): Observable<QuestionTimings> {
 
     function hasPassed(seconds: number) {
-        return timer.now() - question.startTime >= seconds * 1000;
+        return timer.now() - question.timestampToStartVideo >= seconds * 1000;
     }
 
     const timings$ = new Observable<QuestionTimings>(subscriber => {
@@ -29,10 +29,10 @@ export function setupQuestionTimer(
         function animate() {
             subscriber.next({
                 hasStarted: hasPassed(0),
-                displayAnswers: hasPassed(question.questionDisplayTime - question.questionStartTime),
-                lockAnswers: hasPassed(question.answerLockTime - question.questionStartTime),
-                revealAnswer: hasPassed(question.answerRevealTime - question.questionStartTime),
-                hasEnded: hasPassed(question.endTime - question.questionStartTime)
+                displayAnswers: hasPassed(question.videoShowingAnswerOptionsPosition - question.videoStartPosition),
+                lockAnswers: hasPassed(question.videoAnsweringLockedPosition - question.videoStartPosition),
+                revealAnswer: hasPassed(question.videoAnswerRevealedPostion - question.videoStartPosition),
+                hasEnded: hasPassed(question.videoEndPosition - question.videoStartPosition)
             });
             animationHandle = animator.requestAnimationFrame(animate);
         }

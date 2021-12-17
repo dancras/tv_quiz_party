@@ -48,7 +48,7 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
                 }
                 break;
 
-            case 'EndQuestion':
+            case 'LockQuestion':
                 if (state.activeLobby.activeRound && state.activeLobby.activeRound.currentQuestion) {
                     if (state.activeLobby.isHost) {
                         endQuestion(state.activeLobby.id, state.activeLobby.activeRound.currentQuestion.i);
@@ -62,6 +62,9 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
                 } else {
                     console.error('Command failed: No activeRound or currentQuestion', cmd.cmd, state);
                 }
+                break;
+
+            case 'EndFinalQuestion':
                 break;
 
             default:

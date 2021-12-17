@@ -4,8 +4,8 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { useObservable } from '../Lib/RxReact';
 import { QuestionTimings } from '../Model/QuestionTimer';
 import { createTimings } from '../Model/QuestionTimer.test';
-import { CurrentQuestion } from '../Model/Round';
-import { createCurrentQuestion } from '../Model/Round.test';
+import CurrentQuestion from '../Model/CurrentQuestion';
+import { createCurrentQuestion } from '../Model/CurrentQuestion.test';
 import { useQuestionTimings } from './QuestionTimingsHook';
 
 test('it sets up question timings', () => {

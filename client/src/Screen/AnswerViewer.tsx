@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-
 import { CommandButtonProps } from '../Component/CommandButton';
-import Round, { CurrentQuestion } from '../Model/Round';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
+import CurrentQuestion from '../Model/CurrentQuestion';
+import Round from '../Model/Round';
 
 export type AnswerViewerProps = {
     question: CurrentQuestion,
@@ -14,29 +14,30 @@ function AnswerViewer(
     useQuestionTimings: QuestionTimingsHook<CurrentQuestion>,
     { question, round }: AnswerViewerProps
 ) {
-    const [selectedAnswer, setSelectedAnswer] = React.useState<string | null>(null);
+    const [selectedAnswerIndex, setSelectedAnswerIndex] = React.useState<number | null>(null);
 
     const timings = useQuestionTimings(question);
 
     function handleAnswerButton(event: React.MouseEvent<HTMLButtonElement>) {
-        const answer = event.currentTarget.getAttribute('data-answer');
-        if (answer) {
-            round.answerQuestion(answer);
-            setSelectedAnswer(answer);
+        const answerData = event.currentTarget.getAttribute('data-answer');
+        if (answerData !== null) {
+            const answerIndex = parseInt(answerData);
+            question.answerQuestion(answerIndex);
+            setSelectedAnswerIndex(answerIndex);
         } else {
             console.error('Missing data-answer attribute on answer');
         }
     }
 
-    function getButtonClasses(answer: string) {
+    function getButtonClasses(answerIndex: number) {
         const classes = [];
 
-        if (selectedAnswer === answer) {
+        if (selectedAnswerIndex === answerIndex) {
             classes.push('selected');
         }
 
         if (timings.revealAnswer) {
-            classes.push(answer === question.correctAnswer ? 'correct-answer' : 'incorrect-answer');
+            classes.push(answerIndex === question.correctAnswerIndex ? 'correct-answer' : 'incorrect-answer');
         }
 
         return classes.join(' ');
@@ -45,12 +46,12 @@ function AnswerViewer(
     function getContainerClasses() {
         const classes = [];
 
-        if (selectedAnswer) {
+        if (selectedAnswerIndex !== null) {
             classes.push('has-selected');
         }
 
         if (timings.revealAnswer) {
-            classes.push(selectedAnswer === question.correctAnswer ? 'correct' : 'incorrect');
+            classes.push(selectedAnswerIndex === question.correctAnswerIndex ? 'correct' : 'incorrect');
         }
 
         return classes.join(' ');
@@ -58,7 +59,7 @@ function AnswerViewer(
 
     useEffect(() => {
         if (timings.lockAnswers) {
-            question.hasEnded$.subscribe(hasEnded => hasEnded ? void(0) : round.endQuestion()).unsubscribe();
+            question.hasEndedOnServer$.subscribe(hasEnded => hasEnded ? void(0) : round.lockQuestion()).unsubscribe();
         }
     });
 
@@ -66,24 +67,15 @@ function AnswerViewer(
         <div className={getContainerClasses()}>
             { timings.displayAnswers ?
                 <>
-                    <CommandButton
-                        className={getButtonClasses('1')}
-                        disabled={timings.lockAnswers}
-                        data-answer={'1'}
-                        onClick={handleAnswerButton}
-                    >{question.answerText1}</CommandButton>
-                    <CommandButton
-                        className={getButtonClasses('2')}
-                        disabled={timings.lockAnswers}
-                        data-answer={'2'}
-                        onClick={handleAnswerButton}
-                    >{question.answerText2}</CommandButton>
-                    <CommandButton
-                        className={getButtonClasses('3')}
-                        disabled={timings.lockAnswers}
-                        data-answer={'3'}
-                        onClick={handleAnswerButton}
-                    >{question.answerText3}</CommandButton>
+                    { question.answerOptions.map((value, i) =>
+                        <CommandButton
+                            key={'answerOption' + i}
+                            className={getButtonClasses(i)}
+                            disabled={timings.lockAnswers}
+                            data-answer={i}
+                            onClick={handleAnswerButton}
+                        >{value}</CommandButton>
+                    ) }
                 </> :
                 <></>
             }

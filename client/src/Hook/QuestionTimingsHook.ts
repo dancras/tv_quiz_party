@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { Observable } from 'rxjs';
 import { ensureObservable, useObservable } from '../Lib/RxReact';
 import { QuestionTimings } from '../Model/QuestionTimer';
-import { CurrentQuestion } from '../Model/Round';
+import CurrentQuestion from '../Model/CurrentQuestion';
 
 export type QuestionTimingsHook<T extends CurrentQuestion | undefined> =
     (question: T) => T extends CurrentQuestion ? QuestionTimings : undefined;

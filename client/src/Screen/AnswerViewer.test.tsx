@@ -2,12 +2,14 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { act } from 'react-dom/test-utils';
+import { of } from 'rxjs';
 import { CommandButtonProps } from '../Component/CommandButton';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
 import { mockHook } from '../Lib/Test';
+import CurrentQuestion from '../Model/CurrentQuestion';
+import { createCurrentQuestion } from '../Model/CurrentQuestion.test';
 import { createTimings } from '../Model/QuestionTimer.test';
-import Round, { CurrentQuestion } from '../Model/Round';
-import { createCurrentQuestion } from '../Model/Round.test';
+import Round from '../Model/Round';
 import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
@@ -76,24 +78,37 @@ test('it indicates selected answer', () => {
     expect(answerElement.classList).toContain('selected');
 });
 
+test('it calls answerQuestion with clicked answerIndex', () => {
+    const mockQuestion = mock<CurrentQuestion>();
+    mockQuestion.hasEndedOnServer$ = of(false);
+    mockQuestion.answerOptions = ['Answer 1', 'Answer 2'];
+
+    useQuestionTimings.mockReturnValue(createTimings(2));
+
+    render(<ExampleAnswerViewer round={mockRound} question={mockQuestion} />);
+
+    const answerElement = screen.getByText('Answer 2');
+    userEvent.click(answerElement);
+
+    expect(mockQuestion.answerQuestion).toHaveBeenCalledWith(1);
+});
+
 test('it disables answering at answerLockTime', () => {
-    const question = createCurrentQuestion({
-        answerText1: 'Answer 1',
-        answerText2: 'Answer 2',
-        answerText3: 'Answer 3',
-    });
+    const mockQuestion = mock<CurrentQuestion>();
+    mockQuestion.hasEndedOnServer$ = of(false);
+    mockQuestion.answerOptions = ['Answer 1'];
 
     useQuestionTimings.mockReturnValue(createTimings(3));
 
-    render(<ExampleAnswerViewer round={mockRound} question={question} />);
+    render(<ExampleAnswerViewer round={mockRound} question={mockQuestion} />);
 
     const answerElement = screen.getByText('Answer 1');
     userEvent.click(answerElement);
 
-    expect(mockRound.answerQuestion).not.toHaveBeenCalled();
+    expect(mockQuestion.answerQuestion).not.toHaveBeenCalled();
 });
 
-test('it calls endQuestion at answerLockTime if question has not ended', () => {
+test('it calls lockQuestion at answerLockTime if question has not ended', () => {
     const question = createCurrentQuestion({
         hasEnded: false
     });
@@ -102,16 +117,16 @@ test('it calls endQuestion at answerLockTime if question has not ended', () => {
 
     render(<ExampleAnswerViewer round={mockRound} question={question} />);
 
-    expect(mockRound.endQuestion).not.toHaveBeenCalled();
+    expect(mockRound.lockQuestion).not.toHaveBeenCalled();
 
     act(() => {
         useQuestionTimings.mockReturnValue(createTimings(3));
     });
 
-    expect(mockRound.endQuestion).toHaveBeenCalled();
+    expect(mockRound.lockQuestion).toHaveBeenCalled();
 });
 
-test('it does not call endQuestion if question has ended', () => {
+test('it does not call lockQuestion if question has ended', () => {
     const question = createCurrentQuestion({
         hasEnded: true
     });
@@ -120,7 +135,7 @@ test('it does not call endQuestion if question has ended', () => {
 
     render(<ExampleAnswerViewer round={mockRound} question={question} />);
 
-    expect(mockRound.endQuestion).not.toHaveBeenCalled();
+    expect(mockRound.lockQuestion).not.toHaveBeenCalled();
 });
 
 test('it reveals answer at answerRevealTime', () => {

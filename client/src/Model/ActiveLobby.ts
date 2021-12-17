@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { distinctUntilChanged, filter, map, skipWhile, takeWhile } from 'rxjs/operators';
+import CurrentQuestion from './CurrentQuestion';
 
 import Lobby, { PlainLobby, LobbyCmd } from './Lobby';
 import Round, { PlainRound } from './Round';
@@ -14,7 +15,10 @@ export function setupActiveLobby(
         distinctUntilChanged((previous, next) => previous?.id === next?.id),
         map(x => x ?
             new Lobby(
-                Round,
+                (...roundArgs) => new Round(
+                    (...currentQuestionArgs) => new CurrentQuestion(...currentQuestionArgs),
+                    ...roundArgs
+                ),
                 sendCmd,
                 x,
                 latest.pipe(

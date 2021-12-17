@@ -1,12 +1,9 @@
 import { useEffect, useState } from 'react';
 import { YouTubeProps } from 'react-youtube';
-
-import { Timer } from '../Lib/Timer';
-
-import { CurrentQuestion } from '../Model/Round';
-
 import { CountdownProps } from '../Component/Countdown';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
+import { Timer } from '../Lib/Timer';
+import CurrentQuestion from '../Model/CurrentQuestion';
 
 export type QuestionViewerProps = {
     question: CurrentQuestion
@@ -29,7 +26,7 @@ function QuestionViewer(
 
     useEffect(() => {
         if (timings.hasStarted && player && !timings.hasEnded && player.getPlayerState() === 5) {
-            player.seekTo(question.questionStartTime + (timer.now() - question.startTime) / 1000, true);
+            player.seekTo(question.videoStartPosition + (timer.now() - question.timestampToStartVideo) / 1000, true);
             player.playVideo();
         }
     });
@@ -38,8 +35,8 @@ function QuestionViewer(
         playerVars: {
             autoplay: 0 as 0,
             controls: 0 as 0,
-            start: question.questionStartTime,
-            end: question.endTime
+            start: question.videoStartPosition,
+            end: question.videoEndPosition
         }
     };
 
@@ -50,7 +47,7 @@ function QuestionViewer(
     return (
         <div>
             <YouTube videoId={question.videoID} opts={opts} onReady={onReady} />
-            <Countdown endsAt={question.startTime} />
+            <Countdown endsAt={question.timestampToStartVideo} />
         </div>
     );
 }

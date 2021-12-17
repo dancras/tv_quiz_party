@@ -21,7 +21,7 @@ import { createLobby, HandshakeData, joinLobby, setupLobbyWebSocket } from './Se
 import { handleAppCmd, setupCmdBus } from './AppCmd';
 import { setupQuestionTimer } from './Model/QuestionTimer';
 import { QuestionTimingsHook, useQuestionTimings } from './Hook/QuestionTimingsHook';
-import { CurrentQuestion } from './Model/Round';
+import CurrentQuestion from './Model/CurrentQuestion';
 
 export function composeApp(handshakeData: HandshakeData): React.FunctionComponent {
     const areCommandsDisabled$ = new BehaviorSubject(false);

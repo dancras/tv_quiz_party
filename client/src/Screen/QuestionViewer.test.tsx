@@ -5,9 +5,9 @@ import { CountdownProps } from '../Component/Countdown';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
 import { mockHook } from '../Lib/Test';
 import { Timer } from '../Lib/Timer';
+import CurrentQuestion from '../Model/CurrentQuestion';
+import { createCurrentQuestion } from '../Model/CurrentQuestion.test';
 import { createTimings } from '../Model/QuestionTimer.test';
-import { CurrentQuestion } from '../Model/Round';
-import { createCurrentQuestion } from '../Model/Round.test';
 import QuestionViewer, { QuestionViewerProps } from './QuestionViewer';
 
 type MockPlayer = {
