@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { QuestionTimingsHook } from '../../Hook/QuestionTimingsHook';
 import { useObservable } from '../../Lib/RxReact';
 import CurrentQuestion from '../../Model/CurrentQuestion';
@@ -14,6 +15,7 @@ function LeaderboardDisplay(
 ) {
     const hasEndedOnServer = useObservable(currentQuestion?.hasEndedOnServer$);
     const timings = useQuestionTimings(currentQuestion);
+    const [leaderboardForDisplay, setLeaderboardForDisplay] = useState(leaderboard);
 
     function getAnswerClasses(item: LeaderboardItem) {
         if (timings.revealAnswer) {
@@ -23,17 +25,33 @@ function LeaderboardDisplay(
         }
     }
 
+    useEffect(() => {
+        if (timings.revealAnswer) {
+            setLeaderboardForDisplay(leaderboard);
+        }
+    }, [timings.revealAnswer, leaderboard]);
+
     return (
         <table className="leaderboard">
-            { Object.entries(leaderboard).map(([userID, item]) =>
-                <tr key={userID}>
-                    <td>{userID}</td>
-                    { hasEndedOnServer ?
-                        <td className={getAnswerClasses(item)}>{item.previousAnswer}</td> :
-                        <td></td>
-                    }
+            <tbody>
+                <tr>
+                    <td>Name</td>
+                    <td>Score</td>
+                    <td>Position</td>
+                    <td>Answer</td>
                 </tr>
-            ) }
+                { Object.entries(leaderboardForDisplay).map(([userID, item]) =>
+                    <tr key={userID}>
+                        <td>{userID}</td>
+                        <td>{item.score}</td>
+                        <td>{item.position}</td>
+                        { hasEndedOnServer ?
+                            <td className={getAnswerClasses(item)}>{item.previousAnswer}</td> :
+                            <td></td>
+                        }
+                    </tr>
+                ) }
+            </tbody>
         </table>
     );
 }

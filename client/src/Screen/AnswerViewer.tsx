@@ -63,7 +63,7 @@ function AnswerViewer(
                         <CommandButton
                             key={'answerOption' + i}
                             className={getButtonClasses(i)}
-                            disabled={timings.lockAnswers}
+                            disabled={timings.lockAnswers || !!selectedAnswerIndex}
                             data-answer={i}
                             onClick={handleAnswerButton}
                         >{value}</CommandButton>

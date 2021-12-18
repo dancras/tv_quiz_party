@@ -139,3 +139,16 @@ test('created CurrentQuestion instances are passed to CurrentQuestionLifecycle',
         expect(mockLifecycle.setupCurrentQuestion).toHaveBeenCalledWith(question);
     });
 });
+
+test('multiple subscriptions receive the same Lobby instance', () => {
+    const plainLobby = createPlainLobby();
+    const activeLobby$ = setupActiveLobby(mock<CurrentQuestionLifecycle>(), jest.fn(), of(plainLobby));
+
+    const subscriber1 = jest.fn();
+    const subscriber2 = jest.fn();
+
+    activeLobby$.subscribe(subscriber1);
+    activeLobby$.subscribe(subscriber2);
+
+    expect(subscriber1.mock.calls[0][0]).toBe(subscriber2.mock.calls[0][0]);
+});

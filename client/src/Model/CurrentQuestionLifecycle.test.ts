@@ -11,6 +11,12 @@ beforeEach(() => {
     mockSetupQuestionTimer = jest.fn();
 });
 
+function defer() {
+    return new Promise(resolve => {
+        setTimeout(resolve, 0);
+    });
+}
+
 test('it locks the current question when lockAnswers timing is reached', () => {
     const question = mock<CurrentQuestion>();
     const lifecycle = new CurrentQuestionLifecycle(mockSetupQuestionTimer);
@@ -21,11 +27,15 @@ test('it locks the current question when lockAnswers timing is reached', () => {
 
     lifecycle.setupCurrentQuestion(question);
 
-    expect(question.lockQuestion).not.toHaveBeenCalled();
+    return defer().then(() => {
+        expect(question.lockQuestion).not.toHaveBeenCalled();
 
-    timings$.next(createTimings(3));
+        timings$.next(createTimings(3));
 
-    expect(question.lockQuestion).toHaveBeenCalled();
+        return defer();
+    }).then(() => {
+        expect(question.lockQuestion).toHaveBeenCalled();
+    });
 });
 
 test('it does not lock the current question if it has already ended on server', () => {
@@ -38,7 +48,9 @@ test('it does not lock the current question if it has already ended on server', 
 
     lifecycle.setupCurrentQuestion(question);
 
-    expect(question.lockQuestion).not.toHaveBeenCalled();
+    return defer().then(() => {
+        expect(question.lockQuestion).not.toHaveBeenCalled();
+    });
 });
 
 test('it ends the current question when the hasEnded timing is reached', () => {
@@ -51,11 +63,16 @@ test('it ends the current question when the hasEnded timing is reached', () => {
 
     lifecycle.setupCurrentQuestion(question);
 
-    expect(question.endQuestion).not.toHaveBeenCalled();
+    return defer().then(() => {
+        expect(question.endQuestion).not.toHaveBeenCalled();
 
-    timings$.next(createTimings(5));
+        timings$.next(createTimings(5));
 
-    expect(question.endQuestion).toHaveBeenCalled();
+        return defer();
+    }).then(() => {
+        expect(question.endQuestion).toHaveBeenCalled();
+    });
+
 });
 
 test('it ignores any further updates when the next question is setup', () => {

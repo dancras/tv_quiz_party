@@ -1,7 +1,7 @@
 import { Subject, BehaviorSubject, withLatestFrom, map, Observable } from 'rxjs';
 import clone from 'just-clone';
 import { PlainLobby } from './Model/Lobby';
-import { PlainRound } from './Model/Round';
+import { Leaderboard, PlainRound } from './Model/Round';
 import { PlainCurrentQuestionMetadata } from './Model/CurrentQuestion';
 
 export type AppState = {
@@ -14,6 +14,8 @@ export type AppStateEvent =
     { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound } |
     { code: 'CURRENT_QUESTION_UPDATED', data: PlainCurrentQuestionMetadata } |
     { code: 'ANSWER_RECEIVED', data: { answer: string, userID: string } } |
+    { code: 'LEADERBOARD_UPDATED', data: Leaderboard } |
+    { code: 'CLEAR_PREVIOUS_ANSWERS' } |
     { code: 'ACTIVE_ROUND_ENDED' };
 
 export type AppStateHandler = (next: [AppStateEvent, AppState], i: number) => AppState
@@ -49,6 +51,23 @@ export const handleAppStateEvent: AppStateHandler = ([stateEvent, state]) => {
         case 'ANSWER_RECEIVED':
             if (state.activeLobby && state.activeLobby.activeRound) {
                 state.activeLobby.activeRound.leaderboard[stateEvent.data.userID].previousAnswer = stateEvent.data.answer;
+            }
+            return state;
+        case 'LEADERBOARD_UPDATED':
+            if (state.activeLobby && state.activeLobby.activeRound) {
+                const activeRound = state.activeLobby.activeRound;
+                Object.entries(stateEvent.data).forEach(([userID, item]) => {
+                    activeRound.leaderboard[userID].position = item.position;
+                    activeRound.leaderboard[userID].score = item.score;
+                });
+            }
+            return state;
+        case 'CLEAR_PREVIOUS_ANSWERS':
+            if (state.activeLobby && state.activeLobby.activeRound) {
+                const leaderboard = state.activeLobby.activeRound.leaderboard;
+                Object.entries(leaderboard).forEach(([userID,]) => {
+                    leaderboard[userID].previousAnswer = '';
+                });
             }
             return state;
         case 'ACTIVE_ROUND_ENDED':

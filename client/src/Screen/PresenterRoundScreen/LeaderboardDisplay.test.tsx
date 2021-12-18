@@ -6,6 +6,7 @@ import { mockHook } from '../../Lib/Test';
 import CurrentQuestion from '../../Model/CurrentQuestion';
 import { createCurrentQuestion } from '../../Model/CurrentQuestion.test';
 import { createTimings } from '../../Model/QuestionTimer.test';
+import { createLeaderboardItem } from '../../Model/Round.test';
 import LeaderboardDisplay, { LeaderboardDisplayProps } from './LeaderboardDisplay';
 
 let useQuestionTimings: jest.MockedFunction<QuestionTimingsHook<CurrentQuestion>>;
@@ -16,12 +17,12 @@ function ExampleLeaderboardDisplay(props: LeaderboardDisplayProps) {
 
 test('previous answers are revealed when current question is locked', () => {
     const leaderboard = {
-        'first-user': {
+        'first-user': createLeaderboardItem({
             previousAnswer: 'User 1 Answer'
-        },
-        'second-user': {
+        }),
+        'second-user': createLeaderboardItem({
             previousAnswer: 'User 2 Answer'
-        }
+        })
     };
 
     const currentQuestion = createCurrentQuestion();
@@ -45,33 +46,75 @@ test('previous answers are revealed when current question is locked', () => {
 
 test('classes are added to previous answers when revealAnswer timing passes', () => {
     const leaderboard = {
-        'first-user': {
-            previousAnswer: 'Answer'
-        },
-        'second-user': {
-            previousAnswer: 'Not Answer'
-        }
+        'first-user': createLeaderboardItem({
+            previousAnswer: 'Correct Answer'
+        }),
+        'second-user': createLeaderboardItem({
+            previousAnswer: 'Incorrect Answer'
+        })
     };
 
     const currentQuestion = mock<CurrentQuestion>();
     currentQuestion.hasEndedOnServer$ = new BehaviorSubject(true);
-    currentQuestion.correctAnswer = 'Answer';
+    currentQuestion.correctAnswer = 'Correct Answer';
 
     useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(3));
 
     render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} />);
 
-    expect(screen.getByText('Answer').classList).not.toContain('correct');
-    expect(screen.getByText('Answer').classList).not.toContain('incorrect');
-    expect(screen.getByText('Not Answer').classList).not.toContain('correct');
-    expect(screen.getByText('Not Answer').classList).not.toContain('incorrect');
+    expect(screen.getByText('Correct Answer').classList).not.toContain('correct');
+    expect(screen.getByText('Correct Answer').classList).not.toContain('incorrect');
+    expect(screen.getByText('Incorrect Answer').classList).not.toContain('correct');
+    expect(screen.getByText('Incorrect Answer').classList).not.toContain('incorrect');
 
     act(() => {
         useQuestionTimings.mockReturnValue(createTimings(4));
     });
 
-    expect(screen.getByText('Answer').classList).toContain('correct');
-    expect(screen.getByText('Answer').classList).not.toContain('incorrect');
-    expect(screen.getByText('Not Answer').classList).toContain('incorrect');
-    expect(screen.getByText('Not Answer').classList).not.toContain('correct');
+    expect(screen.getByText('Correct Answer').classList).toContain('correct');
+    expect(screen.getByText('Correct Answer').classList).not.toContain('incorrect');
+    expect(screen.getByText('Incorrect Answer').classList).toContain('incorrect');
+    expect(screen.getByText('Incorrect Answer').classList).not.toContain('correct');
+});
+
+test('leaderboard updates are ignored until revealAnswer timing passes', () => {
+    const leaderboard = {
+        'first-user': createLeaderboardItem({
+            position: 111,
+            score: 222
+        })
+    };
+
+    const currentQuestion = mock<CurrentQuestion>();
+    currentQuestion.hasEndedOnServer$ = new BehaviorSubject(true);
+
+    useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(3));
+
+    const { rerender } = render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} />);
+
+    expect(screen.getByText('111')).toBeInTheDocument();
+    expect(screen.getByText('222')).toBeInTheDocument();
+
+    const leaderboardUpdate = {
+        'first-user': createLeaderboardItem({
+            position: 333,
+            score: 444
+        })
+    };
+
+    rerender(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboardUpdate} />);
+
+    expect(screen.getByText('111')).toBeInTheDocument();
+    expect(screen.getByText('222')).toBeInTheDocument();
+    expect(screen.queryByText('333')).not.toBeInTheDocument();
+    expect(screen.queryByText('444')).not.toBeInTheDocument();
+
+    act(() => {
+        useQuestionTimings.mockReturnValue(createTimings(4));
+    });
+
+    expect(screen.queryByText('111')).not.toBeInTheDocument();
+    expect(screen.queryByText('222')).not.toBeInTheDocument();
+    expect(screen.getByText('333')).toBeInTheDocument();
+    expect(screen.getByText('444')).toBeInTheDocument();
 });

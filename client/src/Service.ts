@@ -5,7 +5,7 @@ import { post, subscribeToServer } from './Lib/Request';
 import { AppStateEvent } from './AppState';
 import { PlainLobby } from './Model/Lobby';
 import { PlainCurrentQuestionMetadata, Question } from './Model/CurrentQuestion';
-import { LeaderboardItem, PlainRound } from './Model/Round';
+import { Leaderboard, LeaderboardItem, PlainRound } from './Model/Round';
 
 export type ServerMessage =
     { code: 'USER_JOINED', data: any } |
@@ -14,6 +14,7 @@ export type ServerMessage =
     { code: 'ROUND_STARTED', data: any } |
     { code: 'QUESTION_STARTED', data: any } |
     { code: 'ANSWER_RECEIVED', data: any } |
+    { code: 'LEADERBOARD_UPDATED', data: any } |
     { code: 'ROUND_ENDED', data: any };
 
 export type HandshakeData = {
@@ -147,6 +148,12 @@ export function setupLobbyWebSocket(stateEvents$: Subject<AppStateEvent>, id: st
                     }
                 });
                 break;
+            case 'LEADERBOARD_UPDATED':
+                stateEvents$.next({
+                    code: 'LEADERBOARD_UPDATED',
+                    data: createLeaderboardFromData(message.data)
+                });
+                break;
             case 'ROUND_ENDED':
                 // TODO: Some kind of pending previous round state?
                 break;
@@ -164,7 +171,7 @@ function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
         hostID: lobbyData['host_id'] as string,
         joinCode: lobbyData['join_code'] as string,
         users: lobbyData['users'],
-        activeRound: lobbyData['round'] && createRoundFromRoundData(lobbyData['round']),
+        activeRound: lobbyData['round'] ? createRoundFromRoundData(lobbyData['round']) : null,
         isHost: false,
         isPresenter: false
     };
@@ -176,7 +183,9 @@ function createRoundFromRoundData(roundData: any): PlainRound {
         currentQuestion: roundData['current_question'] ? createPlainCurrentQuestionMetadata(roundData['current_question']) : null,
         isHost: false,
         leaderboard: Object.fromEntries(Object.entries(roundData['leaderboard']).map(([k, v]: any): [string, LeaderboardItem] => [k, {
-            previousAnswer: ''
+            previousAnswer: '',
+            position: v.position,
+            score: v.score
         }]))
     };
 }
@@ -202,4 +211,14 @@ function createQuestionFromQuestionData(questionData: any): Question {
         answerText3: questionData['answer_text_3'] as string,
         correctAnswer: questionData['correct_answer'] as string,
     };
+}
+
+function createLeaderboardFromData(leaderboardData: any): Leaderboard {
+    return Object.fromEntries(Object.entries(leaderboardData).map(([userID, data]: [string, any]) => {
+        return [userID, {
+            previousAnswer: '',
+            position: data.position,
+            score: data.score
+        }];
+    }));
 }

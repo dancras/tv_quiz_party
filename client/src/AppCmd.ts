@@ -64,6 +64,12 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
                 }
                 break;
 
+            case 'EndQuestion':
+                stateEvents$.next({
+                    code: 'CLEAR_PREVIOUS_ANSWERS'
+                });
+                break;
+
             case 'EndFinalQuestion':
                 stateEvents$.next({
                     code: 'ACTIVE_ROUND_ENDED'

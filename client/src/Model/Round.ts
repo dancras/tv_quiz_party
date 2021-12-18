@@ -14,7 +14,9 @@ export type PlainRound = {
 };
 
 export type LeaderboardItem = {
-    previousAnswer: string
+    previousAnswer: string,
+    position: number,
+    score: number
 }
 
 export type Leaderboard = Record<string, LeaderboardItem>;

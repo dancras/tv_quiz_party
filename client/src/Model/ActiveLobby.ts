@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { distinctUntilChanged, filter, map, skipWhile, takeWhile } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, shareReplay, skipWhile, takeWhile } from 'rxjs/operators';
 import CurrentQuestion from './CurrentQuestion';
 import CurrentQuestionLifecycle from './CurrentQuestionLifecycle';
 
@@ -34,6 +34,7 @@ export function setupActiveLobby(
                 )
             ) :
             null
-        )
+        ),
+        shareReplay(1)
     );
 }

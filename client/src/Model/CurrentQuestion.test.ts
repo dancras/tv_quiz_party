@@ -126,7 +126,9 @@ test('endQuestion() sends EndFinalQuestion command when it is the final question
     );
 
     penultimateQuestion.endQuestion();
-    expect(cmdBusSpy).not.toHaveBeenCalled();
+    expect(cmdBusSpy).not.toHaveBeenCalledWith({
+        cmd: 'EndFinalQuestion'
+    });
 
     finalQuestion.endQuestion();
     expect(cmdBusSpy).toHaveBeenCalledWith({

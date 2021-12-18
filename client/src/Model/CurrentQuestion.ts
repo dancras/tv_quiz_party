@@ -4,6 +4,7 @@ import { ConstructorFunction } from '../Lib/Types';
 export type CurrentQuestionCmd =
     { cmd: 'AnswerQuestion', data: string } |
     { cmd: 'LockQuestion' } |
+    { cmd: 'EndQuestion' } |
     { cmd: 'EndFinalQuestion' };
 
 export type Seconds = number;
@@ -94,6 +95,8 @@ class CurrentQuestion {
     }
 
     endQuestion() {
+        this._sendCmd({ cmd: 'EndQuestion' });
+
         if (this.isFinalQuestion) {
             this._sendCmd({ cmd: 'EndFinalQuestion' });
         }

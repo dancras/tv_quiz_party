@@ -1,5 +1,5 @@
 import { Observable } from 'rxjs';
-import { map, shareReplay, skipWhile, takeWhile } from 'rxjs/operators';
+import { distinctUntilChanged, map, shareReplay, skipWhile, takeWhile } from 'rxjs/operators';
 
 import Round, { PlainRound, RoundCmd, RoundFactory } from './Round';
 
@@ -48,7 +48,11 @@ export class Lobby {
             takeWhile((x): x is PlainRound => !!x)
         );
         this.activeRound$ = latest.pipe(
-            map(x => x.activeRound ? roundFactory(sendCmd, x.activeRound, latestPlainRound) : null)
+            distinctUntilChanged((current, next) =>
+                (current.activeRound === null && next.activeRound === null) || (current.activeRound !== null && next.activeRound !== null)
+            ),
+            map(x => x.activeRound ? roundFactory(sendCmd, x.activeRound, latestPlainRound) : null),
+            shareReplay(1)
         );
     }
 

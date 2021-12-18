@@ -2,7 +2,7 @@ import { mock } from 'jest-mock-extended';
 import { BehaviorSubject, firstValueFrom, of } from 'rxjs';
 import CurrentQuestion, { CurrentQuestionFactory } from './CurrentQuestion';
 import { createQuestion, createPlainCurrentQuestion, createPlainCurrentQuestionMetadata } from './CurrentQuestion.test';
-import Round, { PlainRound, RoundCmd } from './Round';
+import Round, { LeaderboardItem, PlainRound, RoundCmd } from './Round';
 
 let currentQuestionFactory: jest.MockedFunction<CurrentQuestionFactory>;
 let sendCommand: jest.MockedFunction<(cmd: RoundCmd) => void>;
@@ -14,6 +14,17 @@ export function createPlainRound(fieldsUnderTest?: Partial<PlainRound>): PlainRo
             currentQuestion: null,
             isHost: false,
             leaderboard: {}
+        },
+        fieldsUnderTest
+    );
+}
+
+export function createLeaderboardItem(fieldsUnderTest?: Partial<LeaderboardItem>): LeaderboardItem {
+    return Object.assign(
+        {
+            previousAnswer: '',
+            position: 0,
+            score: 0
         },
         fieldsUnderTest
     );
@@ -192,6 +203,28 @@ test('currentQuestion$ does not leak data between questions', () => {
     expect(secondQuestionSpy).toHaveBeenCalledTimes(1);
 });
 
+test('currentQuestion$ does not create a new instance for every subscriber', () => {
+    const initialData = createPlainRound({
+        questions: [createQuestion()]
+    });
+
+    const latestData$ = new BehaviorSubject(createPlainRound({
+        currentQuestion: createPlainCurrentQuestionMetadata({
+            i: 0,
+            hasEnded: false
+        })
+    }));
+
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData$);
+
+    const spy1 = jest.fn();
+    const spy2 = jest.fn();
+    round.currentQuestion$.subscribe(spy1);
+    round.currentQuestion$.subscribe(spy2);
+
+    expect(currentQuestionFactory).toHaveBeenCalledTimes(1);
+});
+
 test('canStartNextQuestion$ is true for host with null or ended currentQuestion', () => {
 
     const initialData = createPlainRound({
@@ -250,9 +283,9 @@ test('leaderboard$ is mapped from latestData$', () => {
     const initialData = createPlainRound();
     const latestData = of(createPlainRound({
         leaderboard: {
-            'user-id': {
+            'user-id': createLeaderboardItem({
                 previousAnswer: 'foo'
-            }
+            })
         }
     }));
 
