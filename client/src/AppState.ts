@@ -13,6 +13,7 @@ export type AppStateEvent =
     { code: 'ACTIVE_LOBBY_UPDATED', data: PlainLobby | null } |
     { code: 'ACTIVE_ROUND_UPDATED', data: PlainRound } |
     { code: 'CURRENT_QUESTION_UPDATED', data: PlainCurrentQuestionMetadata } |
+    { code: 'ANSWER_RECEIVED', data: { answer: string, userID: string } } |
     { code: 'ACTIVE_ROUND_ENDED' };
 
 export type AppStateHandler = (next: [AppStateEvent, AppState], i: number) => AppState
@@ -43,6 +44,11 @@ export const handleAppStateEvent: AppStateHandler = ([stateEvent, state]) => {
         case 'CURRENT_QUESTION_UPDATED':
             if (state.activeLobby && state.activeLobby.activeRound) {
                 state.activeLobby.activeRound.currentQuestion = stateEvent.data;
+            }
+            return state;
+        case 'ANSWER_RECEIVED':
+            if (state.activeLobby && state.activeLobby.activeRound) {
+                state.activeLobby.activeRound.leaderboard[stateEvent.data.userID].previousAnswer = stateEvent.data.answer;
             }
             return state;
         case 'ACTIVE_ROUND_ENDED':

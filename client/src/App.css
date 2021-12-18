@@ -56,3 +56,11 @@
 .correct-answer {
   border: 1px solid greenyellow;
 }
+
+.leaderboard .correct {
+  color: green;
+}
+
+.leaderboard .incorrect {
+  color: red;
+}

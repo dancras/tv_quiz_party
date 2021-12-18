@@ -50,6 +50,7 @@ class CurrentQuestion {
     videoAnswerRevealedPostion: Seconds;
     videoEndPosition: Seconds;
     answerOptions: string[];
+    correctAnswer: string;
     correctAnswerIndex: number;
     isFinalQuestion: boolean;
 
@@ -73,6 +74,7 @@ class CurrentQuestion {
             questionData.answerText2,
             questionData.answerText3
         ];
+        this.correctAnswer = questionData.correctAnswer;
         this.correctAnswerIndex = ['1', '2', '3'].indexOf(questionData.correctAnswer);
         this.hasEndedOnServer$ = latestMetaData$.pipe(
             map(x => x.hasEnded),
@@ -92,7 +94,6 @@ class CurrentQuestion {
     }
 
     endQuestion() {
-        console.log('ENDING QUESTION', this.isFinalQuestion);
         if (this.isFinalQuestion) {
             this._sendCmd({ cmd: 'EndFinalQuestion' });
         }

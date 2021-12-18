@@ -4,12 +4,6 @@ import CurrentQuestion, { CurrentQuestionFactory } from './CurrentQuestion';
 import { createQuestion, createPlainCurrentQuestion, createPlainCurrentQuestionMetadata } from './CurrentQuestion.test';
 import Round, { PlainRound, RoundCmd } from './Round';
 
-const EMPTY_PLAIN_ROUND: PlainRound = {
-    questions: [],
-    currentQuestion: null,
-    isHost: false
-};
-
 let currentQuestionFactory: jest.MockedFunction<CurrentQuestionFactory>;
 let sendCommand: jest.MockedFunction<(cmd: RoundCmd) => void>;
 
@@ -18,7 +12,8 @@ export function createPlainRound(fieldsUnderTest?: Partial<PlainRound>): PlainRo
         {
             questions: [],
             currentQuestion: null,
-            isHost: false
+            isHost: false,
+            leaderboard: {}
         },
         fieldsUnderTest
     );
@@ -30,16 +25,8 @@ beforeEach(() => {
 });
 
 test('questions is exposed from initialData', () => {
-    const initialData = {
-        questions: [],
-        currentQuestion: null,
-        isHost: false
-    };
-    const latestData = of({
-        questions: [],
-        currentQuestion: null,
-        isHost: false
-    });
+    const initialData = createPlainRound();
+    const latestData = of(createPlainRound());
 
     const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
 
@@ -47,7 +34,7 @@ test('questions is exposed from initialData', () => {
 });
 
 test('startNextQuestion sends correct command', () => {
-    const round = new Round(currentQuestionFactory, sendCommand, EMPTY_PLAIN_ROUND, of(EMPTY_PLAIN_ROUND));
+    const round = new Round(currentQuestionFactory, sendCommand, createPlainRound(), of(createPlainRound()));
 
     round.startNextQuestion();
 
@@ -72,17 +59,12 @@ test('currentQuestion$ uses currentQuestionFactory to create CurrentQuestion', (
         startTime: 10,
         hasEnded: true
     };
-    const initialData = {
-        questions: expectedQuestionsData,
-        currentQuestion: null,
-        isHost: false
-    };
-    const latestData = of({
-        // Question data is fixed so we don't use latestData
-        questions: [],
-        currentQuestion: expectedInitialMetaData,
-        isHost: false
+    const initialData = createPlainRound({
+        questions: expectedQuestionsData
     });
+    const latestData = of(createPlainRound({
+        currentQuestion: expectedInitialMetaData,
+    }));
     const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
 
     const mockCurrentQuestion = mock<CurrentQuestion>();
@@ -212,16 +194,12 @@ test('currentQuestion$ does not leak data between questions', () => {
 
 test('canStartNextQuestion$ is true for host with null or ended currentQuestion', () => {
 
-    const initialData = {
-        questions: [],
-        currentQuestion: null,
-        isHost: true
-    };
-    const latestData = new BehaviorSubject<PlainRound>({
-        questions: [],
-        currentQuestion: null,
+    const initialData = createPlainRound({
         isHost: true
     });
+    const latestData = new BehaviorSubject<PlainRound>(createPlainRound({
+        isHost: true
+    }));
 
     const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
 
@@ -232,24 +210,22 @@ test('canStartNextQuestion$ is true for host with null or ended currentQuestion'
     expect(subscribeSpy).toBeCalledWith(true);
     subscribeSpy.mockClear();
 
-    latestData.next({
-        questions: [],
+    latestData.next(createPlainRound({
         currentQuestion: createPlainCurrentQuestion({
             hasEnded: false
         }),
         isHost: true
-    });
+    }));
 
     expect(subscribeSpy).toBeCalledWith(false);
     subscribeSpy.mockClear();
 
-    latestData.next({
-        questions: [],
+    latestData.next(createPlainRound({
         currentQuestion: createPlainCurrentQuestion({
             hasEnded: true
         }),
         isHost: true
-    });
+    }));
 
     expect(subscribeSpy).toBeCalledWith(true);
     subscribeSpy.mockClear();
@@ -258,16 +234,8 @@ test('canStartNextQuestion$ is true for host with null or ended currentQuestion'
 
 test('canStartNextQuestion$ is false for non-host', () => {
 
-    const initialData = {
-        questions: [],
-        currentQuestion: null,
-        isHost: false
-    };
-    const latestData = of({
-        questions: [],
-        currentQuestion: null,
-        isHost: false
-    });
+    const initialData = createPlainRound();
+    const latestData = of(createPlainRound());
 
     const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
 
@@ -276,4 +244,21 @@ test('canStartNextQuestion$ is false for non-host', () => {
     round.canStartNextQuestion$.subscribe(subscribeSpy);
 
     expect(subscribeSpy).toBeCalledWith(false);
+});
+
+test('leaderboard$ is mapped from latestData$', () => {
+    const initialData = createPlainRound();
+    const latestData = of(createPlainRound({
+        leaderboard: {
+            'user-id': {
+                previousAnswer: 'foo'
+            }
+        }
+    }));
+
+    const round = new Round(currentQuestionFactory, sendCommand, initialData, latestData);
+
+    return firstValueFrom(round.leaderboard$).then(leaderboard => {
+        expect(leaderboard['user-id'].previousAnswer).toEqual('foo');
+    });
 });

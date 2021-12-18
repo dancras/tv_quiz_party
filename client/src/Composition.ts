@@ -23,6 +23,7 @@ import { setupQuestionTimer } from './Model/QuestionTimer';
 import { QuestionTimingsHook, useQuestionTimings } from './Hook/QuestionTimingsHook';
 import CurrentQuestion from './Model/CurrentQuestion';
 import CurrentQuestionLifecycle from './Model/CurrentQuestionLifecycle';
+import LeaderboardDisplay, { LeaderboardDisplayProps } from './Screen/PresenterRoundScreen/LeaderboardDisplay';
 
 export function composeApp(handshakeData: HandshakeData): React.FunctionComponent {
     const areCommandsDisabled$ = new BehaviorSubject(false);
@@ -93,9 +94,11 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
 
     const ComposedCountdown = (props: CountdownProps) => Countdown(window, timer, props);
 
+    const ComposedLeaderboardDisplay = (props: LeaderboardDisplayProps) => LeaderboardDisplay(composedUseQuestionTimings, props);
     const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(ComposedCountdown, YouTube, composedUseQuestionTimings, timer, props);
 
     const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundScreen(
+        ComposedLeaderboardDisplay,
         ComposedQuestionViewer,
         props
     );

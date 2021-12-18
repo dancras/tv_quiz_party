@@ -5,7 +5,7 @@ import { post, subscribeToServer } from './Lib/Request';
 import { AppStateEvent } from './AppState';
 import { PlainLobby } from './Model/Lobby';
 import { PlainCurrentQuestionMetadata, Question } from './Model/CurrentQuestion';
-import { PlainRound } from './Model/Round';
+import { LeaderboardItem, PlainRound } from './Model/Round';
 
 export type ServerMessage =
     { code: 'USER_JOINED', data: any } |
@@ -13,6 +13,7 @@ export type ServerMessage =
     { code: 'LOBBY_CLOSED', data: null } |
     { code: 'ROUND_STARTED', data: any } |
     { code: 'QUESTION_STARTED', data: any } |
+    { code: 'ANSWER_RECEIVED', data: any } |
     { code: 'ROUND_ENDED', data: any };
 
 export type HandshakeData = {
@@ -137,6 +138,15 @@ export function setupLobbyWebSocket(stateEvents$: Subject<AppStateEvent>, id: st
                     data: createPlainCurrentQuestionMetadata(message.data)
                 });
                 break;
+            case 'ANSWER_RECEIVED':
+                stateEvents$.next({
+                    code: 'ANSWER_RECEIVED',
+                    data: {
+                        answer: message.data['answer'],
+                        userID: message.data['user_id']
+                    }
+                });
+                break;
             case 'ROUND_ENDED':
                 // TODO: Some kind of pending previous round state?
                 break;
@@ -164,7 +174,10 @@ function createRoundFromRoundData(roundData: any): PlainRound {
     return {
         questions: roundData['questions'].map(createQuestionFromQuestionData),
         currentQuestion: roundData['current_question'] ? createPlainCurrentQuestionMetadata(roundData['current_question']) : null,
-        isHost: false
+        isHost: false,
+        leaderboard: Object.fromEntries(Object.entries(roundData['leaderboard']).map(([k, v]: any): [string, LeaderboardItem] => [k, {
+            previousAnswer: ''
+        }]))
     };
 }
 

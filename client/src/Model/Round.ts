@@ -10,7 +10,14 @@ export type PlainRound = {
     questions: Question[],
     currentQuestion: PlainCurrentQuestionMetadata | null,
     isHost: boolean
+    leaderboard: Leaderboard
 };
+
+export type LeaderboardItem = {
+    previousAnswer: string
+}
+
+export type Leaderboard = Record<string, LeaderboardItem>;
 
 export type RoundFactory = PartiallyApplied1<ConstructorFunction<typeof Round>>;
 
@@ -19,34 +26,37 @@ export class Round {
     questions: Question[];
     currentQuestion$: Observable<(CurrentQuestion | null)>;
     canStartNextQuestion$: Observable<boolean>;
+    leaderboard$: Observable<Leaderboard>;
 
     constructor(
         currentQuestionFactory: CurrentQuestionFactory,
         sendCmd: (cmd: RoundCmd) => void,
         initialData: PlainRound,
-        latestData: Observable<PlainRound>
+        latestData$: Observable<PlainRound>
     ) {
         this._sendCmd = sendCmd;
         this.questions = initialData.questions;
 
         function createCurrentQuestion(initialMetaData: PlainCurrentQuestionMetadata): CurrentQuestion {
-            return currentQuestionFactory(sendCmd, initialData.questions, initialMetaData, latestData.pipe(
+            return currentQuestionFactory(sendCmd, initialData.questions, initialMetaData, latestData$.pipe(
                 map(x => x.currentQuestion),
                 filter((x): x is PlainCurrentQuestionMetadata => !!x),
                 takeWhile(y => y.i === initialMetaData.i)
             ));
         }
 
-        this.currentQuestion$ = latestData.pipe(
+        this.currentQuestion$ = latestData$.pipe(
             map(x => x.currentQuestion),
             distinctUntilChanged((previous, next) => previous?.i === next?.i),
             map(x => x ? createCurrentQuestion(x) : null),
             shareReplay(1)
         );
 
-        this.canStartNextQuestion$ = latestData.pipe(
+        this.canStartNextQuestion$ = latestData$.pipe(
             map(x => initialData.isHost && (!x.currentQuestion || x.currentQuestion.hasEnded))
         );
+
+        this.leaderboard$ = latestData$.pipe(map(x => x.leaderboard));
     }
 
     startNextQuestion() {
