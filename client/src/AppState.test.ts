@@ -8,14 +8,18 @@ test('state is updated by the handler function', () => {
 
     const initialState: AppState = {
         userID: 'user',
-        activeLobby: null
+        activeLobby: null,
+        isProfileComplete: false,
+        pendingCommand: null
     };
 
     const expectedLobby = createPlainLobby();
 
     const updatedState: AppState = {
         userID: 'user',
-        activeLobby: expectedLobby
+        activeLobby: expectedLobby,
+        isProfileComplete: false,
+        pendingCommand: null
     };
 
     const expectedStateEvent: AppStateEvent = {

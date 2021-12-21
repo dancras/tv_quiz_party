@@ -1,12 +1,14 @@
 import { Subject, BehaviorSubject, withLatestFrom, map, Observable } from 'rxjs';
 import clone from 'just-clone';
-import { PlainLobby } from './Model/Lobby';
+import { LobbyCmd, PlainLobby } from './Model/Lobby';
 import { Leaderboard, PlainRound } from './Model/Round';
 import { PlainCurrentQuestionMetadata } from './Model/CurrentQuestion';
 
 export type AppState = {
     userID: string,
-    activeLobby: PlainLobby | null
+    activeLobby: PlainLobby | null,
+    isProfileComplete: boolean,
+    pendingCommand: LobbyCmd | null
 };
 export type AppStateEvent =
     { code: 'USER_ID_SET', data: string } |
@@ -16,7 +18,9 @@ export type AppStateEvent =
     { code: 'ANSWER_RECEIVED', data: { answer: string, userID: string } } |
     { code: 'LEADERBOARD_UPDATED', data: Leaderboard } |
     { code: 'CLEAR_PREVIOUS_ANSWERS' } |
-    { code: 'ACTIVE_ROUND_ENDED' };
+    { code: 'ACTIVE_ROUND_ENDED' } |
+    { code: 'REQUIRE_PROFILE_COMPLETE', data: LobbyCmd } |
+    { code: 'UPDATE_PROFILE' };
 
 export type AppStateHandler = (next: [AppStateEvent, AppState], i: number) => AppState
 
@@ -75,6 +79,13 @@ export const handleAppStateEvent: AppStateHandler = ([stateEvent, state]) => {
                 state.activeLobby.activeRound = null;
             }
             return state;
+        case 'REQUIRE_PROFILE_COMPLETE':
+            state.pendingCommand = stateEvent.data;
+            return state;
+        case 'UPDATE_PROFILE':
+            state.pendingCommand = null;
+            state.isProfileComplete = true;
+            return state;
     }
 };
 
@@ -95,7 +106,9 @@ export function setupAppState(
 
     const state$ = new BehaviorSubject<AppState>({
         userID,
-        activeLobby
+        activeLobby,
+        isProfileComplete: false,
+        pendingCommand: null
     });
 
     stateEvents$.pipe(

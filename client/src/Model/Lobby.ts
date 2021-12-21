@@ -5,6 +5,8 @@ import Round, { PlainRound, RoundCmd, RoundFactory } from './Round';
 
 export type LobbyCmd =
     RoundCmd |
+    { cmd: 'CreateLobby' } |
+    { cmd: 'JoinLobby', joinCode: string, isPresenter: boolean } |
     { cmd: 'ExitLobby' } |
     { cmd: 'StartRound' };
 

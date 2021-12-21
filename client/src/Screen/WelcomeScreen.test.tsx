@@ -1,20 +1,19 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CommandButtonProps } from '../Component/CommandButton';
+import { LobbyCmd } from '../Model/Lobby';
 import WelcomeScreen from './WelcomeScreen';
 
 let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
-let mockCreateLobby: jest.MockedFunction<() => void>;
-let mockJoinLobby: jest.MockedFunction<(joinCode: string, presenter?: boolean) => void>;
+let mockSendCmd: jest.MockedFunction<(cmd: LobbyCmd) => void>;
 
 beforeEach(() => {
     DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
-    mockCreateLobby = jest.fn();
-    mockJoinLobby = jest.fn();
+    mockSendCmd = jest.fn();
 });
 
 function ExampleWelcomeScreen() {
-    return WelcomeScreen(DummyCommandButton, mockCreateLobby, mockJoinLobby);
+    return WelcomeScreen(DummyCommandButton, mockSendCmd);
 }
 
 test('host lobby button calls create lobby and disables buttons when clicked', () => {
@@ -25,7 +24,9 @@ test('host lobby button calls create lobby and disables buttons when clicked', (
 
     userEvent.click(buttonElement);
 
-    expect(mockCreateLobby).toBeCalled();
+    expect(mockSendCmd).toBeCalledWith({
+        cmd: 'CreateLobby'
+    });
 });
 
 test('join lobby form calls join lobby passing lobby code', () => {
@@ -38,7 +39,11 @@ test('join lobby form calls join lobby passing lobby code', () => {
     userEvent.type(inputElement, 'FOO');
     userEvent.click(buttonElement);
 
-    expect(mockJoinLobby).toBeCalledWith('FOO');
+    expect(mockSendCmd).toBeCalledWith({
+        cmd: 'JoinLobby',
+        joinCode: 'FOO',
+        isPresenter: false
+    });
 });
 
 test('join lobby form passes presenter flag when presenter button clicked', () => {
@@ -51,5 +56,9 @@ test('join lobby form passes presenter flag when presenter button clicked', () =
     userEvent.type(inputElement, 'FOO');
     userEvent.click(buttonElement);
 
-    expect(mockJoinLobby).toBeCalledWith('FOO', true);
+    expect(mockSendCmd).toBeCalledWith({
+        cmd: 'JoinLobby',
+        joinCode: 'FOO',
+        isPresenter: true
+    });
 });

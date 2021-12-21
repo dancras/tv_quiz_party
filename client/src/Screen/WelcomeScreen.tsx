@@ -1,15 +1,17 @@
 import React from 'react';
 import { CommandButtonProps } from '../Component/CommandButton';
+import { LobbyCmd } from '../Model/Lobby';
 
 function WelcomeScreen(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
-    createLobby: () => any,
-    joinLobby: (joinCode: string, presenter?: boolean
-) => any) {
+    sendCmd: (cmd: LobbyCmd) => void
+) {
     const [joinCode, setJoinCode] = React.useState('');
 
     function handleHostLobbyButton() {
-        createLobby();
+        sendCmd({
+            cmd: 'CreateLobby'
+        });
     }
 
     function handleJoinCodeChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -17,11 +19,19 @@ function WelcomeScreen(
     }
 
     function handleJoinLobbyButton() {
-        joinLobby(joinCode);
+        sendCmd({
+            cmd: 'JoinLobby',
+            joinCode: joinCode,
+            isPresenter: false
+        });
     }
 
     function handlePresenterButton() {
-        joinLobby(joinCode, true);
+        sendCmd({
+            cmd: 'JoinLobby',
+            joinCode: joinCode,
+            isPresenter: true
+        });
     }
 
     return (

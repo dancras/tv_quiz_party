@@ -1,4 +1,4 @@
-import AppCmd from './AppCmd';
+import { setupCmdBus } from './AppCmd';
 
 test('', () => {
 });

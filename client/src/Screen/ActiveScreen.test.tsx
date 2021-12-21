@@ -11,27 +11,33 @@ import { RoundScreenProps } from './PresenterRoundScreen';
 import { BehaviorSubject } from 'rxjs';
 
 let activeLobby$: BehaviorSubject<Lobby | null>;
+let isCommandPending$: BehaviorSubject<boolean>;
 let DummyWelcomeScreen: React.FunctionComponent;
 let DummyLobbyScreen: React.FunctionComponent<LobbyScreenProps>;
 let DummyPresenterRoundScreen: React.FunctionComponent<RoundScreenProps>;
 let DummyPlayerRoundScreen: React.FunctionComponent<RoundScreenProps>;
+let DummyProfileScreen: React.FunctionComponent;
 
 function ExampleActiveScreen() {
     return ActiveScreen(
         activeLobby$,
+        isCommandPending$,
         DummyWelcomeScreen,
         DummyLobbyScreen,
         DummyPresenterRoundScreen,
-        DummyPlayerRoundScreen
+        DummyPlayerRoundScreen,
+        DummyProfileScreen
     );
 }
 
 beforeEach(() => {
     activeLobby$ = new BehaviorSubject<Lobby | null>(null);
+    isCommandPending$ = new BehaviorSubject<boolean>(false);
     DummyWelcomeScreen = () => <div>Welcome</div>;
     DummyLobbyScreen = () => <div>Lobby</div>;
     DummyPresenterRoundScreen = () => <div>Presenter</div>;
     DummyPlayerRoundScreen = () => <div>Player</div>;
+    DummyProfileScreen = () => <div>Profile</div>;
 });
 
 test('it displays welcome screen when there is no active lobby', () => {
@@ -40,6 +46,7 @@ test('it displays welcome screen when there is no active lobby', () => {
     expect(screen.getByText('Welcome')).toBeInTheDocument();
     expect(screen.queryByText('Lobby')).not.toBeInTheDocument();
     expect(screen.queryByText('Round')).not.toBeInTheDocument();
+    expect(screen.queryByText('Profile')).not.toBeInTheDocument();
 });
 
 test('it displays lobby screen when there is an active lobby', () => {
@@ -53,6 +60,7 @@ test('it displays lobby screen when there is an active lobby', () => {
     expect(screen.getByText('Lobby')).toBeInTheDocument();
     expect(screen.queryByText('Welcome')).not.toBeInTheDocument();
     expect(screen.queryByText('Round')).not.toBeInTheDocument();
+    expect(screen.queryByText('Profile')).not.toBeInTheDocument();
 });
 
 test('it displays presenter round screen when there is an active presenter round', () => {
@@ -68,6 +76,7 @@ test('it displays presenter round screen when there is an active presenter round
     expect(screen.queryByText('Player')).not.toBeInTheDocument();
     expect(screen.queryByText('Welcome')).not.toBeInTheDocument();
     expect(screen.queryByText('Lobby')).not.toBeInTheDocument();
+    expect(screen.queryByText('Profile')).not.toBeInTheDocument();
 });
 
 test('it displays player round screen when there is an active player round', () => {
@@ -80,6 +89,19 @@ test('it displays player round screen when there is an active player round', () 
     render(<ExampleActiveScreen />);
 
     expect(screen.getByText('Player')).toBeInTheDocument();
+    expect(screen.queryByText('Presenter')).not.toBeInTheDocument();
+    expect(screen.queryByText('Welcome')).not.toBeInTheDocument();
+    expect(screen.queryByText('Lobby')).not.toBeInTheDocument();
+    expect(screen.queryByText('Profile')).not.toBeInTheDocument();
+});
+
+test('it displays profile screen when command is pending', () => {
+    isCommandPending$.next(true);
+
+    render(<ExampleActiveScreen />);
+
+    expect(screen.getByText('Profile')).toBeInTheDocument();
+    expect(screen.queryByText('Player')).not.toBeInTheDocument();
     expect(screen.queryByText('Presenter')).not.toBeInTheDocument();
     expect(screen.queryByText('Welcome')).not.toBeInTheDocument();
     expect(screen.queryByText('Lobby')).not.toBeInTheDocument();

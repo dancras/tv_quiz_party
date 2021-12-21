@@ -64,3 +64,9 @@
 .leaderboard .incorrect {
   color: red;
 }
+
+.profile-img-preview img {
+  margin: 0 auto;
+  clip-path: circle(50px at center);
+  width: 100px;
+}

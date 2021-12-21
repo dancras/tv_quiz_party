@@ -44,42 +44,24 @@ export function doHandshake(): Promise<HandshakeData> {
         });
 }
 
-export function createLobby(stateEvents$: Subject<AppStateEvent>): Promise<any> {
+export function createLobby(): Promise<PlainLobby> {
     return post('/api/create_lobby')
         .then(response => response.json())
-        .then((lobbyData) => {
-            stateEvents$.next({
-                code: 'ACTIVE_LOBBY_UPDATED',
-                data: createLobbyFromLobbyData(lobbyData)
-            });
-        });
+        .then(createLobbyFromLobbyData);
 }
 
-export function joinLobby(stateEvents$: Subject<AppStateEvent>, joinCode: string, presenter?: boolean): Promise<any> {
-    if (presenter) {
-        return fetch(`/api/get_lobby/${joinCode}`)
-            .then(response => response.json())
-            .then((lobbyData) => {
-                const lobby = createLobbyFromLobbyData(lobbyData);
-                lobby.isPresenter = true;
+export function getLobbyByJoinCode(joinCode: string): Promise<PlainLobby> {
+    return fetch(`/api/get_lobby/${joinCode}`)
+        .then(response => response.json())
+        .then(createLobbyFromLobbyData);
+}
 
-                stateEvents$.next({
-                    code: 'ACTIVE_LOBBY_UPDATED',
-                    data: lobby
-                });
-            });
-    } else {
-        return post('/api/join_lobby', {
-                join_code: joinCode
-            })
-            .then(response => response.json())
-            .then((lobbyData) => {
-                stateEvents$.next({
-                    code: 'ACTIVE_LOBBY_UPDATED',
-                    data: createLobbyFromLobbyData(lobbyData)
-                });
-            });
-    }
+export function joinLobby(joinCode: string): Promise<PlainLobby> {
+    return post('/api/join_lobby', {
+            join_code: joinCode
+        })
+        .then(response => response.json())
+        .then(createLobbyFromLobbyData);
 }
 
 export function exitLobby(lobbyID: string) {
