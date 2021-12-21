@@ -25,7 +25,15 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
     if (state.activeLobby) {
         switch (cmd.cmd) {
             case 'ExitLobby':
-                exitLobby(state.activeLobby.id);
+                if (state.activeLobby.isPresenter) {
+                    stateEvents$.next({
+                        code: 'ACTIVE_LOBBY_UPDATED',
+                        data: null
+                    });
+                    break;
+                } else {
+                    exitLobby(state.activeLobby.id);
+                }
                 break;
 
             case 'StartRound':
