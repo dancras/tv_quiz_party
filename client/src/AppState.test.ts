@@ -4,12 +4,12 @@ import { createPlainLobby } from './Model/Lobby.test';
 
 test('state is updated by the handler function', () => {
     const handler: jest.MockedFunction<AppStateHandler> = jest.fn();
-    const [$state, $stateEvent] = setupAppState('user', null, handler);
+    const [$state, $stateEvent] = setupAppState('user', null, null, handler);
 
     const initialState: AppState = {
         userID: 'user',
         activeLobby: null,
-        isProfileComplete: false,
+        profile: null,
         pendingCommand: null
     };
 
@@ -18,7 +18,7 @@ test('state is updated by the handler function', () => {
     const updatedState: AppState = {
         userID: 'user',
         activeLobby: expectedLobby,
-        isProfileComplete: false,
+        profile: null,
         pendingCommand: null
     };
 
@@ -40,7 +40,7 @@ test('state is updated by the handler function', () => {
 
 test('updater function uses a new state copy', () => {
     const handler: jest.MockedFunction<AppStateHandler> = jest.fn(([stateEvent, state], i) => state);
-    const [, $stateEvent] = setupAppState('user', null, handler);
+    const [, $stateEvent] = setupAppState('user', null, null, handler);
 
     const expectedLobby = createPlainLobby();
 

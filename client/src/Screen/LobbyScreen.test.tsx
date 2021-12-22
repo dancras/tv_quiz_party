@@ -18,7 +18,7 @@ beforeEach(() => {
     DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     mockLobby = mock<Lobby>();
     mockLobby.joinCode = 'join-code';
-    mockLobby.users$ = new BehaviorSubject([]);
+    mockLobby.users$ = new BehaviorSubject({});
 });
 
 test('join code is displayed', () => {
@@ -31,12 +31,23 @@ test('join code is displayed', () => {
 });
 
 test('users are displayed', () => {
-    mockLobby.users$ = new BehaviorSubject(['user1', 'user2']);
+    mockLobby.users$ = new BehaviorSubject({
+        user1: {
+            userID: 'user1',
+            displayName: 'User 1',
+            imageFilename: ''
+        },
+        user2: {
+            userID: 'user2',
+            displayName: 'User 2',
+            imageFilename: ''
+        }
+    });
 
     render(<ExampleLobbyScreen lobby={mockLobby} />);
 
-    expect(screen.getByText('user1')).toBeInTheDocument();
-    expect(screen.getByText('user2')).toBeInTheDocument();
+    expect(screen.getByText('User 1')).toBeInTheDocument();
+    expect(screen.getByText('User 2')).toBeInTheDocument();
 });
 
 test('start button calls start round function when clicked', () => {

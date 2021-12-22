@@ -32,6 +32,7 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
     const [state$, stateEvents$] = setupAppState(
         handshakeData.userID,
         handshakeData.activeLobby,
+        handshakeData.profile,
         handleAppStateEvent
     );
 

@@ -1,14 +1,7 @@
 import React, { useRef, useState } from 'react';
 import Clipper from 'image-clipper';
 import { CommandButtonProps } from '../Component/CommandButton';
-
-export type Profile = {
-    imgDataUrl: string,
-    displayName: string
-}
-
-export type ProfileCmd =
-    { cmd: 'UpdateProfile', data: Profile }
+import { ProfileCmd } from '../Model/Profile';
 
 export function processProfileImage(file: File): Promise<string> {
     return new Promise((resolve, reject) => {

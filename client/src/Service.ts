@@ -6,6 +6,7 @@ import { AppStateEvent } from './AppState';
 import { PlainLobby } from './Model/Lobby';
 import { PlainCurrentQuestionMetadata, Question } from './Model/CurrentQuestion';
 import { Leaderboard, LeaderboardItem, PlainRound } from './Model/Round';
+import { Profile } from './Model/Profile';
 
 export type ServerMessage =
     { code: 'USER_JOINED', data: any } |
@@ -20,8 +21,14 @@ export type ServerMessage =
 export type HandshakeData = {
     userID: string,
     activeLobby: PlainLobby | null,
+    profile: Profile | null,
     timeOffset: number
 };
+
+export type UpdateProfileData = {
+    imgDataUrl: string,
+    displayName: string
+}
 
 export function doHandshake(): Promise<HandshakeData> {
     const handshakeSendTime = Date.now();
@@ -35,11 +42,13 @@ export function doHandshake(): Promise<HandshakeData> {
             const timeOffset = sendTime - ((sendTime + receiveTime) / 2);
 
             const lobbyData = handshakeData['active_lobby'];
+            const profileData = handshakeData['profile'];
 
             return {
                 userID: handshakeData['user_id'],
                 activeLobby: lobbyData ? createLobbyFromLobbyData(lobbyData) : null,
-                timeOffset
+                timeOffset,
+                profile: profileData['display_name'] ? createProfileFromData(profileData) : null
             };
         });
 }
@@ -89,6 +98,15 @@ export function endQuestion(lobbyID: string, questionIndex: number) {
     post(`/api/lobby/${lobbyID}/end_question`, {
         question_index: questionIndex,
     });
+}
+
+export function updateProfile(displayName: string, imgDataUrl: string): Promise<Profile> {
+    return post('/api/update_profile', {
+            display_name: displayName,
+            image_data_url: imgDataUrl
+        })
+        .then(response => response.json())
+        .then(createProfileFromData);
 }
 
 export function setupLobbyWebSocket(stateEvents$: Subject<AppStateEvent>, id: string) {
@@ -152,7 +170,7 @@ function createLobbyFromLobbyData(lobbyData: any): PlainLobby {
         id: lobbyData['id'] as string,
         hostID: lobbyData['host_id'] as string,
         joinCode: lobbyData['join_code'] as string,
-        users: lobbyData['users'],
+        users: Object.fromEntries(Object.entries(lobbyData['users']).map(([k, v]) => [k, createProfileFromData(v)])),
         activeRound: lobbyData['round'] ? createRoundFromRoundData(lobbyData['round']) : null,
         isHost: false,
         isPresenter: false
@@ -203,4 +221,12 @@ function createLeaderboardFromData(leaderboardData: any): Leaderboard {
             score: data.score
         }];
     }));
+}
+
+function createProfileFromData(profileData: any): Profile {
+    return {
+        userID: profileData['user_id'],
+        displayName: profileData['display_name'],
+        imageFilename: profileData['image_filename']
+    };
 }

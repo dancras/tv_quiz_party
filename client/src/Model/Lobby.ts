@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { distinctUntilChanged, map, shareReplay, skipWhile, takeWhile } from 'rxjs/operators';
+import { Profile } from './Profile';
 
 import Round, { PlainRound, RoundCmd, RoundFactory } from './Round';
 
@@ -14,7 +15,7 @@ export type PlainLobby = {
     id: string,
     hostID: string,
     joinCode: string,
-    users: string[],
+    users: Record<string, Profile>,
     activeRound: PlainRound | null,
     isHost: boolean,
     isPresenter: boolean
@@ -25,7 +26,7 @@ export class Lobby {
     joinCode: string;
     isHost: boolean;
     isPresenter: boolean;
-    users$: Observable<string[]>;
+    users$: Observable<Record<string, Profile>>;
     activeRound$: Observable<Round | null>;
     private _sendCmd: (cmd: LobbyCmd) => void;
 

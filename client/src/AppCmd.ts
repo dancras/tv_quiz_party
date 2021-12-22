@@ -1,7 +1,7 @@
 import { Observable, Subject, withLatestFrom } from 'rxjs';
 import { AppState, AppStateEvent } from './AppState';
 import { LobbyCmd } from './Model/Lobby';
-import { ProfileCmd } from './Screen/ProfileScreen';
+import { ProfileCmd } from './Model/Profile';
 import {
     createLobby,
     getLobbyByJoinCode,
@@ -10,12 +10,13 @@ import {
     startRound,
     startNextQuestion,
     answerQuestion,
-    endQuestion
+    endQuestion,
+    updateProfile
 } from './Service';
 
 export type AppCmd = LobbyCmd | ProfileCmd;
 
-export type AppCmdHandler = ([cmd, state]: [AppCmd, AppState]) => AppCmd | void;
+export type AppCmdHandler = ([cmd, state]: [AppCmd, AppState]) => Promise<AppCmd | void> | void;
 
 export function setupCmdBus(
     state$: Observable<AppState>,
@@ -26,17 +27,21 @@ export function setupCmdBus(
     cmds$.pipe(
         withLatestFrom(state$)
     ).subscribe(([cmd, state]) => {
-        const nextCmd = handler([cmd, state]);
+        const maybeNext = handler([cmd, state]);
 
-        if (nextCmd) {
-            cmds$.next(nextCmd);
+        if (maybeNext) {
+            maybeNext.then(nextCmd => {
+                if (nextCmd) {
+                    cmds$.next(nextCmd);
+                }
+            });
         }
     });
 
     return cmds$;
 }
 
-export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]: [AppCmd, AppState]): AppCmd | void {
+export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]: [AppCmd, AppState]): ReturnType<AppCmdHandler> {
 
     let guard_index = 0;
     function guard<T>(value: T | null): value is T {
@@ -51,7 +56,7 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
 
     switch (cmd.cmd) {
         case 'CreateLobby':
-            if (state.isProfileComplete) {
+            if (state.profile !== null) {
                 createLobby().then(lobby => {
                     stateEvents$.next({
                         code: 'ACTIVE_LOBBY_UPDATED',
@@ -75,7 +80,7 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
                         data: lobby
                     });
                 });
-            } else if (state.isProfileComplete) {
+            } else if (state.profile !== null) {
                 // TODO rejection locks the UI
                 joinLobby(cmd.joinCode).then(lobby => {
                     stateEvents$.next({
@@ -152,13 +157,18 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
 
         case 'UpdateProfile':
             const pendingCommand = state.pendingCommand;
-            stateEvents$.next({
-                code: 'UPDATE_PROFILE'
-            });
-            if (pendingCommand) {
-                return pendingCommand;
-            }
-            break;
+
+            return updateProfile(cmd.data.displayName, cmd.data.imgDataUrl)
+                .then(profile => {
+                    stateEvents$.next({
+                        code: 'UPDATE_PROFILE',
+                        data: profile
+                    });
+
+                    if (pendingCommand) {
+                        return pendingCommand;
+                    }
+                });
 
         default:
             const checkExhaustive: never = cmd;

@@ -3,12 +3,13 @@ import clone from 'just-clone';
 import { LobbyCmd, PlainLobby } from './Model/Lobby';
 import { Leaderboard, PlainRound } from './Model/Round';
 import { PlainCurrentQuestionMetadata } from './Model/CurrentQuestion';
+import { Profile } from './Model/Profile';
 
 export type AppState = {
     userID: string,
     activeLobby: PlainLobby | null,
-    isProfileComplete: boolean,
-    pendingCommand: LobbyCmd | null
+    pendingCommand: LobbyCmd | null,
+    profile: Profile | null
 };
 export type AppStateEvent =
     { code: 'USER_ID_SET', data: string } |
@@ -20,7 +21,7 @@ export type AppStateEvent =
     { code: 'CLEAR_PREVIOUS_ANSWERS' } |
     { code: 'ACTIVE_ROUND_ENDED' } |
     { code: 'REQUIRE_PROFILE_COMPLETE', data: LobbyCmd } |
-    { code: 'UPDATE_PROFILE' };
+    { code: 'UPDATE_PROFILE', data: Profile };
 
 export type AppStateHandler = (next: [AppStateEvent, AppState], i: number) => AppState
 
@@ -84,7 +85,7 @@ export const handleAppStateEvent: AppStateHandler = ([stateEvent, state]) => {
             return state;
         case 'UPDATE_PROFILE':
             state.pendingCommand = null;
-            state.isProfileComplete = true;
+            state.profile = stateEvent.data;
             return state;
     }
 };
@@ -92,6 +93,7 @@ export const handleAppStateEvent: AppStateHandler = ([stateEvent, state]) => {
 export function setupAppState(
     userID: string,
     activeLobby: PlainLobby | null,
+    profile: Profile | null,
     handler: AppStateHandler
 ): [Observable<AppState>, Subject<AppStateEvent>] {
     const stateEvents$ = new Subject<AppStateEvent>();
@@ -107,7 +109,7 @@ export function setupAppState(
     const state$ = new BehaviorSubject<AppState>({
         userID,
         activeLobby,
-        isProfileComplete: false,
+        profile,
         pendingCommand: null
     });
 
