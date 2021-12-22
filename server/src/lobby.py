@@ -76,7 +76,7 @@ async def exit_lobby(lobby_id):
         loop.create_task(broadcast(lobby['id'], 'LOBBY_CLOSED', {}))
         model.delete_lobby(lobby['id'])
     else:
-        lobby['users'].remove(g.user_id)
+        model.remove_user_from_lobby(g.user_id, lobby)
 
         loop = asyncio.get_event_loop()
         loop.create_task(broadcast(lobby['id'], 'USER_EXITED', {

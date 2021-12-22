@@ -6,7 +6,11 @@ class UnitTests(unittest.IsolatedAsyncioTestCase):
     def test_create_answers_store(self):
         k1 = "user_id_1"
         k2 = "user_id_2"
-        store = model.create_answers_store([k1, k2])
+        users = {
+            k1: {},
+            k2: {}
+        }
+        store = model.create_answers_store(users)
         self.assertIsNot(store[k1], store[k2])
 
     def test_update_leaderboard_positions(self):

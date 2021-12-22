@@ -5,7 +5,7 @@ from quart import request, websocket, g
 
 from app import app
 import auth
-from model import get_user_lobby
+from model import get_user_lobby, get_profile
 from response_helpers import error_response
 
 
@@ -45,7 +45,8 @@ async def handshake():
         response = json.dumps({
             'user_id': user_id,
             'active_lobby': get_user_lobby(user_id),
-            'utc_time': datetime.now(timezone.utc).timestamp()
+            'utc_time': datetime.now(timezone.utc).timestamp(),
+            'profile': get_profile(user_id)
         }),
         status = 200,
         mimetype = 'application/json'

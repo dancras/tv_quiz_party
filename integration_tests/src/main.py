@@ -1,4 +1,5 @@
 import asyncio
+import base64
 from datetime import datetime, timezone
 import json
 import unittest
@@ -10,6 +11,8 @@ from request_helpers import new_handshook_session, handshake_session
 
 BASE_URL = "http://flask_backend:5000"
 HANDSHAKE_URL = "{}/handshake".format(BASE_URL)
+UPDATE_PROFILE_URL = "{}/update_profile".format(BASE_URL)
+PROFILE_IMAGES_CDN_URL = '{}/profile_images/{{}}'.format(BASE_URL)
 CREATE_LOBBY_URL = "{}/create_lobby".format(BASE_URL)
 JOIN_LOBBY_URL = "{}/join_lobby".format(BASE_URL)
 GET_LOBBY_URL = "{}/get_lobby/{{}}".format(BASE_URL)
@@ -63,6 +66,28 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
             async with new_session.get(BASE_URL) as response:
                 self.assertEqual(response.status, 200)
 
+    async def test_update_profile(self):
+        base64_image = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
+        profile_data = {
+            'display_name': 'David Bowie<>',
+            'image_data_url': 'data:image/png;base64,{}'.format(base64_image)
+        }
+
+        response = await self.session.post(UPDATE_PROFILE_URL, json=profile_data)
+        self.assertEqual(response.status, 200)
+
+        update_profile_response_data = await response.json()
+        display_name = update_profile_response_data['display_name']
+        image_filename = update_profile_response_data['image_filename']
+        self.assertEqual(display_name, 'David Bowie&lt;&gt;')
+
+        async with self.session.get(PROFILE_IMAGES_CDN_URL.format(image_filename)) as img_response:
+            img_data = await img_response.read()
+            self.assertEqual(img_data, base64.b64decode(base64_image))
+
+        handshake_response_data = await handshake_session(self.session)
+
+        self.assertEqual(handshake_response_data['profile'], update_profile_response_data)
 
     async def test_create_lobby(self):
         response = await self.session.post(CREATE_LOBBY_URL)

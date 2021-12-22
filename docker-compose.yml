@@ -10,6 +10,7 @@ services:
       - 8080:5000
     volumes:
       - .:/app
+      - /profile_images
     environment:
       - PYTHONUNBUFFERED=1
   integration_tests:
