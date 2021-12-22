@@ -9,8 +9,8 @@ import ActiveScreen from './Screen/ActiveScreen';
 import WelcomeScreen from './Screen/WelcomeScreen';
 import { setupActiveLobby } from './Model/ActiveLobby';
 import LobbyScreen, { LobbyScreenProps } from './Screen/LobbyScreen';
-import PresenterRoundScreen, { RoundScreenProps } from './Screen/PresenterRoundScreen';
-import PlayerRoundScreen from './Screen/PlayerRoundScreen';
+import PresenterRoundScreen, { PresenterRoundScreenProps } from './Screen/PresenterRoundScreen';
+import PlayerRoundScreen, { PlayerRoundScreenProps } from './Screen/PlayerRoundScreen';
 import QuestionViewer, { QuestionViewerProps } from './Screen/QuestionViewer';
 import Countdown, { CountdownProps } from './Component/Countdown';
 import { Timer } from './Lib/Timer';
@@ -94,7 +94,7 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
     const ComposedLeaderboardDisplay = (props: LeaderboardDisplayProps) => LeaderboardDisplay(composedUseQuestionTimings, props);
     const ComposedQuestionViewer = (props: QuestionViewerProps) => QuestionViewer(ComposedCountdown, YouTube, composedUseQuestionTimings, timer, props);
 
-    const ActivePresenterRoundScreen = (props: RoundScreenProps) => PresenterRoundScreen(
+    const ActivePresenterRoundScreen = (props: PresenterRoundScreenProps) => PresenterRoundScreen(
         ComposedLeaderboardDisplay,
         ComposedQuestionViewer,
         props
@@ -102,7 +102,7 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
 
     const ComposedAnswerViewer = (props: AnswerViewerProps) => AnswerViewer(ComposedCommandButton, composedUseQuestionTimings, props);
 
-    const ActivePlayerRoundScreen = (props: RoundScreenProps) => PlayerRoundScreen(
+    const ActivePlayerRoundScreen = (props: PlayerRoundScreenProps) => PlayerRoundScreen(
         ComposedCommandButton,
         ComposedAnswerViewer,
         ComposedCountdown,

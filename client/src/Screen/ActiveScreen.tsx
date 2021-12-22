@@ -2,15 +2,16 @@ import { Observable } from 'rxjs';
 import { ensureObservable, useObservable } from '../Lib/RxReact';
 import Lobby from '../Model/Lobby';
 import { LobbyScreenProps } from './LobbyScreen';
-import { RoundScreenProps } from './PresenterRoundScreen';
+import { PlayerRoundScreenProps } from './PlayerRoundScreen';
+import { PresenterRoundScreenProps } from './PresenterRoundScreen';
 
 function ActiveScreen(
     activeLobby$: Observable<Lobby | null>,
     isCommandPending$: Observable<boolean>,
     WelcomeScreen: React.FunctionComponent,
     LobbyScreen: React.FunctionComponent<LobbyScreenProps>,
-    PresenterRoundScreen: React.FunctionComponent<RoundScreenProps>,
-    PlayerRoundScreen: React.FunctionComponent<RoundScreenProps>,
+    PresenterRoundScreen: React.FunctionComponent<PresenterRoundScreenProps>,
+    PlayerRoundScreen: React.FunctionComponent<PlayerRoundScreenProps>,
     ProfileScreen: React.FunctionComponent
 ) {
     const lobby = useObservable(activeLobby$);
@@ -20,7 +21,7 @@ function ActiveScreen(
     if (isCommandPending) {
         return <ProfileScreen />;
     } else if (round && lobby?.isPresenter) {
-        return <PresenterRoundScreen round={round} />;
+        return <PresenterRoundScreen lobby={lobby} round={round} />;
     } else if (round && !lobby?.isPresenter) {
         return <PlayerRoundScreen round={round} />;
     } else if (lobby) {

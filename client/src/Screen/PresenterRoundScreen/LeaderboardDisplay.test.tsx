@@ -5,7 +5,9 @@ import { QuestionTimingsHook } from '../../Hook/QuestionTimingsHook';
 import { mockHook } from '../../Lib/Test';
 import CurrentQuestion from '../../Model/CurrentQuestion';
 import { createCurrentQuestion } from '../../Model/CurrentQuestion.test';
+import { Profile } from '../../Model/Profile';
 import { createTimings } from '../../Model/QuestionTimer.test';
+import { Leaderboard } from '../../Model/Round';
 import { createLeaderboardItem } from '../../Model/Round.test';
 import LeaderboardDisplay, { LeaderboardDisplayProps } from './LeaderboardDisplay';
 
@@ -13,6 +15,14 @@ let useQuestionTimings: jest.MockedFunction<QuestionTimingsHook<CurrentQuestion>
 
 function ExampleLeaderboardDisplay(props: LeaderboardDisplayProps) {
     return LeaderboardDisplay(useQuestionTimings, props);
+}
+
+function createUsersForLeaderboard(leaderboard: Leaderboard): Record<string, Profile> {
+    return Object.fromEntries(Object.entries(leaderboard).map(([k, v]) => [k, {
+        userID: k,
+        displayName: 'Name ' + k,
+        imageFilename: k + '.png'
+    }]));
 }
 
 test('previous answers are revealed when current question is locked', () => {
@@ -31,7 +41,7 @@ test('previous answers are revealed when current question is locked', () => {
 
     useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(3));
 
-    render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} />);
+    render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} users={createUsersForLeaderboard(leaderboard)} />);
 
     expect(screen.queryByText('User 1 Answer')).not.toBeInTheDocument();
     expect(screen.queryByText('User 2 Answer')).not.toBeInTheDocument();
@@ -60,7 +70,7 @@ test('classes are added to previous answers when revealAnswer timing passes', ()
 
     useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(3));
 
-    render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} />);
+    render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} users={createUsersForLeaderboard(leaderboard)} />);
 
     expect(screen.getByText('Correct Answer').classList).not.toContain('correct');
     expect(screen.getByText('Correct Answer').classList).not.toContain('incorrect');
@@ -85,12 +95,14 @@ test('leaderboard updates are ignored until revealAnswer timing passes', () => {
         })
     };
 
+    const users = createUsersForLeaderboard(leaderboard);
+
     const currentQuestion = mock<CurrentQuestion>();
     currentQuestion.hasEndedOnServer$ = new BehaviorSubject(true);
 
     useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(3));
 
-    const { rerender } = render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} />);
+    const { rerender } = render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} users={users} />);
 
     expect(screen.getByText('111')).toBeInTheDocument();
     expect(screen.getByText('222')).toBeInTheDocument();
@@ -102,7 +114,7 @@ test('leaderboard updates are ignored until revealAnswer timing passes', () => {
         })
     };
 
-    rerender(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboardUpdate} />);
+    rerender(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboardUpdate} users={users} />);
 
     expect(screen.getByText('111')).toBeInTheDocument();
     expect(screen.getByText('222')).toBeInTheDocument();
