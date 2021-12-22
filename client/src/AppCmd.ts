@@ -106,6 +106,10 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
                     break;
                 } else {
                     exitLobby(state.activeLobby.id);
+                    stateEvents$.next({
+                        code: 'ACTIVE_LOBBY_UPDATED',
+                        data: null
+                    });
                 }
             }
             break;
