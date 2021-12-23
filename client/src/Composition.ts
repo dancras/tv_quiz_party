@@ -1,6 +1,6 @@
 /* eslint react-hooks/rules-of-hooks: 0 */
-import { BehaviorSubject } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { BehaviorSubject, fromEvent } from 'rxjs';
+import { map, withLatestFrom } from 'rxjs/operators';
 
 import YouTube from 'react-youtube';
 
@@ -25,6 +25,8 @@ import CurrentQuestion from './Model/CurrentQuestion';
 import CurrentQuestionLifecycle from './Model/CurrentQuestionLifecycle';
 import LeaderboardDisplay, { LeaderboardDisplayProps } from './Screen/PresenterRoundScreen/LeaderboardDisplay';
 import ProfileScreen, { processProfileImage } from './Screen/ProfileScreen';
+import Lobby from './Model/Lobby';
+import lifecycle from 'page-lifecycle';
 
 export function composeApp(handshakeData: HandshakeData): React.FunctionComponent {
     const areCommandsDisabled$ = new BehaviorSubject(false);
@@ -57,15 +59,31 @@ export function composeApp(handshakeData: HandshakeData): React.FunctionComponen
         state$.pipe(map(x => x.activeLobby))
     );
 
-    let closeSocket: (() => void) | undefined;
+    let closeSocket: ((code: number) => void) | undefined;
 
     activeLobby$.subscribe(activeLobby => {
-        if (closeSocket) closeSocket();
+        if (closeSocket) closeSocket(1000);
         if (activeLobby) {
-            const socket = setupLobbyWebSocket(stateEvents$, activeLobby.id);
-            closeSocket = socket.close.bind(socket);
+            setupActiveLobbyWebSocket(activeLobby);
         }
     });
+
+    const lifecycleStateChanges$ = fromEvent(lifecycle, 'statechange');
+    lifecycleStateChanges$.pipe(withLatestFrom(activeLobby$)).subscribe(([event, activeLobby]) => {
+        if (
+            activeLobby &&
+            ['active', 'passive'].includes(event.newState) &&
+            event.oldState === 'hidden'
+        ) {
+            setupActiveLobbyWebSocket(activeLobby);
+            sendCmd({ cmd: 'SyncStateWithServer' });
+        }
+    });
+
+    function setupActiveLobbyWebSocket(activeLobby: Lobby) {
+        const socket = setupLobbyWebSocket(stateEvents$, activeLobby.id);
+        closeSocket = socket.close.bind(socket);
+    }
 
     const isCommandPending$ = state$.pipe(map(x => x.pendingCommand !== null));
 

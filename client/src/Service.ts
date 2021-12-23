@@ -59,6 +59,12 @@ export function createLobby(): Promise<PlainLobby> {
         .then(createLobbyFromLobbyData);
 }
 
+export function getLobby(lobbyID: string): Promise<PlainLobby> {
+    return fetch(`/api/lobby/${lobbyID}`)
+        .then(response => response.json())
+        .then(createLobbyFromLobbyData);
+}
+
 export function getLobbyByJoinCode(joinCode: string): Promise<PlainLobby> {
     return fetch(`/api/get_lobby/${joinCode}`)
         .then(response => response.json())

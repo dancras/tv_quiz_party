@@ -4,6 +4,7 @@ import { LobbyCmd } from './Model/Lobby';
 import { ProfileCmd } from './Model/Profile';
 import {
     createLobby,
+    getLobby,
     getLobbyByJoinCode,
     joinLobby,
     exitLobby,
@@ -14,7 +15,10 @@ import {
     updateProfile
 } from './Service';
 
-export type AppCmd = LobbyCmd | ProfileCmd;
+export type AppCmd =
+    LobbyCmd |
+    ProfileCmd |
+    { cmd: 'SyncStateWithServer' };
 
 export type AppCmdHandler = ([cmd, state]: [AppCmd, AppState]) => Promise<AppCmd | void> | void;
 
@@ -55,6 +59,22 @@ export function handleAppCmd(stateEvents$: Subject<AppStateEvent>, [cmd, state]:
     }
 
     switch (cmd.cmd) {
+        case 'SyncStateWithServer':
+            if (guard(state.activeLobby)) {
+                getLobby(state.activeLobby.id).then(lobby => {
+                    stateEvents$.next({
+                        code: 'ACTIVE_LOBBY_UPDATED',
+                        data: lobby
+                    });
+                }).catch(() => {
+                    stateEvents$.next({
+                        code: 'ACTIVE_LOBBY_UPDATED',
+                        data: null
+                    });
+                });
+            }
+            break;
+
         case 'CreateLobby':
             if (state.profile !== null) {
                 createLobby().then(lobby => {
