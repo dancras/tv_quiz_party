@@ -65,6 +65,28 @@
   color: red;
 }
 
+.leaderboard {
+  display: block;
+}
+
+.leaderboard td:nth-child(2) {
+  text-align: left;
+}
+
+.leaderboard thead {
+  display: block;
+}
+
+.leaderboard tbody {
+  display: flex;
+  flex-direction: column;
+}
+
+.leaderboard tr {
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr 1fr 1fr;
+}
+
 .profile-img-preview img {
   margin: 0 auto;
   clip-path: circle(50px at center);

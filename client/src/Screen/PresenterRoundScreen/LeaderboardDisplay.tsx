@@ -50,7 +50,7 @@ function LeaderboardDisplay(
 
     return (
         <table className="leaderboard">
-            <tbody>
+            <thead>
                 <tr>
                     <td></td>
                     <td>Name</td>
@@ -58,8 +58,10 @@ function LeaderboardDisplay(
                     <td>Position</td>
                     <td>Answer</td>
                 </tr>
+            </thead>
+            <tbody>
                 { Object.entries(leaderboardForDisplay).map(([userID, item]) =>
-                    <tr key={userID}>
+                    <tr key={userID} style={{ 'order': item.position }}>
                         <td><img className="profile-img" src={getProfileImageSrc(users[userID])} alt={users[userID].displayName} /></td>
                         <td>{users[userID].displayName}</td>
                         <td>{item.score}</td>
