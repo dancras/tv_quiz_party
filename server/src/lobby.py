@@ -71,20 +71,31 @@ async def fetch_lobby(lobby_id):
 async def exit_lobby(lobby_id):
     lobby = model.edit_lobby(lobby_id)
 
+    loop = asyncio.get_event_loop()
+
     if lobby['host_id'] == g.user_id:
-        loop = asyncio.get_event_loop()
-        loop.create_task(broadcast(lobby['id'], 'LOBBY_CLOSED', {}))
+        loop.create_task(notify_lobby_closed(lobby['id']))
         model.delete_lobby(lobby['id'])
     else:
         model.remove_user_from_lobby(g.user_id, lobby)
-
-        loop = asyncio.get_event_loop()
-        loop.create_task(broadcast(lobby['id'], 'USER_EXITED', {
-            'user_id': g.user_id,
-            'lobby': lobby
-        }))
+        loop.create_task(notify_user_exited(g.user_id, lobby))
 
     return json_response({})
+
+async def notify_user_exited(user_id, lobby):
+    await broadcast(lobby['id'], 'USER_EXITED', {
+        'user_id': user_id,
+        'lobby': lobby
+    })
+    await broadcast(lobby['id'], 'RELEASE_USER', {
+        'user_id': user_id,
+    })
+
+
+async def notify_lobby_closed(lobby_id):
+    await broadcast(lobby_id, 'LOBBY_CLOSED', {})
+    await broadcast(lobby_id, 'RELEASE_ALL', {})
+    all_lobby_queues.pop(lobby_id)
 
 
 @app.route("/lobby/<lobby_id>/start_round", methods = ['POST'])
@@ -199,15 +210,17 @@ async def end_question(lobby_id):
 
 @app.websocket("/lobby/<lobby_id>/ws")
 async def lobby_updates(lobby_id):
-    try:
-        await websocket.accept()
+    lobby_id = int(lobby_id)
 
-        current_lobby_queues = all_lobby_queues[int(lobby_id)]
+    try:
+        current_lobby_queues = all_lobby_queues[lobby_id]
+
+        await websocket.accept()
 
         try:
             existing_user_queue = current_lobby_queues[g.user_id]
             await existing_user_queue.put({
-                'code': 'SOCKET_REPLACED',
+                'code': 'EXCHANGE_SOCKET',
                 'data': {}
             })
         except KeyError:
@@ -218,11 +231,17 @@ async def lobby_updates(lobby_id):
 
         while True:
             data = await queue.get()
-            await websocket.send_json(data)
 
-            if data['code'] == 'SOCKET_REPLACED':
+            if data['code'] in {'EXCHANGE_SOCKET', 'RELEASE_ALL'}:
                 break
 
-    except asyncio.CancelledError:
-        current_lobby_queues = all_lobby_queues[int(lobby_id)]
+            if data['code'] == 'RELEASE_USER' and data['data']['user_id'] == g.user_id:
+                current_lobby_queues.pop(g.user_id)
+                break
+
+            await websocket.send_json(data)
+
+    except KeyError:
+        pass
+    except:
         current_lobby_queues.pop(g.user_id)

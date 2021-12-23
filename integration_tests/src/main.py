@@ -632,12 +632,11 @@ class IntegrationTests(unittest.IsolatedAsyncioTestCase):
                     except (asyncio.exceptions.TimeoutError):
                         self.fail("No websocket message received")
 
-            def assert_websocket_replaced(code, data):
-                self.assertEqual(code, 'SOCKET_REPLACED')
-
-            await at_least_one_message(ws1, assert_websocket_replaced)
-
-
+            try:
+                await asyncio.wait_for(ws1.receive(), timeout=3)
+                self.assertEqual(ws1.closed, True)
+            except (asyncio.exceptions.TimeoutError):
+                self.fail("Websocket was not closed as expected")
 
 if __name__ == "__main__":
     unittest.main()
