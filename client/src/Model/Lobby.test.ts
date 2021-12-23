@@ -1,18 +1,8 @@
 import { BehaviorSubject, from, of } from 'rxjs';
-import Lobby, { LobbyCmd, PlainLobby } from './Lobby';
+import Lobby, { LobbyCmd } from './Lobby';
+import { createPlainLobby } from './Lobby.test-helper';
+import { createProfile } from './Profile.test-helper';
 import { createPlainRound } from './Round.test';
-
-export function createPlainLobby(fieldsUnderTest?: Partial<PlainLobby>): PlainLobby {
-    return Object.assign({
-        id: '',
-        hostID: '',
-        joinCode: '',
-        users: [],
-        activeRound: null,
-        isHost: false,
-        isPresenter: false
-    }, fieldsUnderTest);
-}
 
 test('it exposes fields from initialData', () => {
     const lobby = new Lobby(
@@ -62,16 +52,24 @@ test('exit sends correct command', () => {
 });
 
 test('users$ is derived from latestData', () => {
+    const expectedUsers = {
+        'lobby-user-1': {
+            userID: 'lobby-user-1',
+            displayName: '',
+            imageFilename: ''
+        }
+    };
+
     const lobby = new Lobby(
         jest.fn(),
         jest.fn(),
         createPlainLobby(),
         from([
             createPlainLobby({
-                users: []
+                users: {}
             }),
             createPlainLobby({
-                users: ['lobby-user-1'],
+                users: expectedUsers,
             })
         ])
     );
@@ -82,7 +80,47 @@ test('users$ is derived from latestData', () => {
     const subscribeSpy = jest.fn();
     lobby.users$.subscribe(subscribeSpy);
 
-    expect(subscribeSpy).toHaveBeenNthCalledWith(1, ['lobby-user-1']);
+    expect(subscribeSpy).toHaveBeenNthCalledWith(1, expectedUsers);
+});
+
+test('users$ only notifies when a new record is added', () => {
+    const latestData$ = new BehaviorSubject(createPlainLobby({
+        id: '1',
+        users: {
+            user1: createProfile('user1')
+        }
+    }));
+
+    const lobby = new Lobby(
+        jest.fn(),
+        jest.fn(),
+        createPlainLobby(),
+        latestData$
+    );
+
+    const subscribeSpy = jest.fn();
+    lobby.users$.subscribe(subscribeSpy);
+
+    subscribeSpy.mockClear();
+
+    latestData$.next(createPlainLobby({
+        id: '1',
+        users: {
+            user1: createProfile('user1', 'Foo')
+        }
+    }));
+
+    expect(subscribeSpy).not.toHaveBeenCalled();
+
+    latestData$.next(createPlainLobby({
+        id: '1',
+        users: {
+            user1: createProfile('user1', 'Foo'),
+            user2: createProfile('user2'),
+        }
+    }));
+
+    expect(subscribeSpy).toHaveBeenCalled();
 });
 
 test('activeRound$ uses latestData to construct Round', () => {

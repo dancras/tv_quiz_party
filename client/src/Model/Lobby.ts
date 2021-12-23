@@ -1,5 +1,6 @@
 import { Observable } from 'rxjs';
 import { distinctUntilChanged, map, shareReplay, skipWhile, takeWhile } from 'rxjs/operators';
+import shallowEquals from 'shallow-equals';
 import { Profile } from './Profile';
 
 import Round, { PlainRound, RoundCmd, RoundFactory } from './Round';
@@ -43,6 +44,9 @@ export class Lobby {
         this.isPresenter = initial.isPresenter;
         this.users$ = latest.pipe(
             map(x => x.users),
+            distinctUntilChanged((current, next) => {
+                return shallowEquals(Object.keys(current), Object.keys(next));
+            }),
             shareReplay(1)
         );
         const latestPlainRound = latest.pipe(

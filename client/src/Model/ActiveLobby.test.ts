@@ -5,7 +5,8 @@ import { createPlainCurrentQuestionMetadata, createQuestion } from './CurrentQue
 import CurrentQuestionLifecycle from './CurrentQuestionLifecycle';
 import Lobby, { LobbyCmd } from './Lobby';
 
-import { createPlainLobby } from './Lobby.test';
+import { createPlainLobby } from './Lobby.test-helper';
+import { createProfile } from './Profile.test-helper';
 import { createPlainRound } from './Round.test';
 
 test('null values are passed through from latest', () => {
@@ -38,11 +39,10 @@ test('created Lobby instances have correct initial data', () => {
 test('no new Lobby instance is emit if the id has not changed', () => {
     const plainLobby = createPlainLobby({
         id: 'lobby-id',
-        users: [],
+
     });
     const plainLobby_update = createPlainLobby({
         id: 'lobby-id',
-        users: [],
     });
     const latest = from([
         plainLobby,
@@ -59,13 +59,15 @@ test('no new Lobby instance is emit if the id has not changed', () => {
 test('created Lobby instances have correct latest data', () => {
     const plainLobby = createPlainLobby({
         id: 'lobby-id',
-        users: ['user-1'],
+        users: {
+            'user-1': createProfile('user-1')
+        },
     });
     const latest = of(plainLobby);
     const activeLobby$ = setupActiveLobby(mock<CurrentQuestionLifecycle>(), jest.fn(), latest);
 
     return firstValueFrom(activeLobby$)
-        .then((lobby) => lobby ? firstValueFrom(lobby.users$) : [])
+        .then((lobby) => lobby ? firstValueFrom(lobby.users$) : {})
         .then((users) => {
             expect(users).toEqual(plainLobby.users);
         });
@@ -74,19 +76,25 @@ test('created Lobby instances have correct latest data', () => {
 test('adjacent lobby data does not leak into previous Lobby instances', () => {
     const plainLobby1 = createPlainLobby({
         id: 'lobby-id-1',
-        users: ['lobby-1-user'],
+        users: {
+            'lobby-1-user': createProfile('lobby-1-user')
+        },
     });
     const plainLobby2 = createPlainLobby({
         id: 'lobby-id-2',
-        users: [''],
+        users: {},
     });
     const plainLobby2_update = createPlainLobby({
         id: 'lobby-id-2',
-        users: ['lobby-2-user'],
+        users: {
+            'lobby-2-user': createProfile('lobby-2-user')
+        },
     });
     const plainLobby3 = createPlainLobby({
         id: 'lobby-id-3',
-        users: ['lobby-3-user'],
+        users: {
+            'lobby-3-user': createProfile('lobby-3-user')
+        },
     });
     const latest = from([
         plainLobby1,
@@ -102,7 +110,7 @@ test('adjacent lobby data does not leak into previous Lobby instances', () => {
     const lobby2: Lobby = subscribeSpy.mock.calls[1][0];
 
     return lastValueFrom(lobby2.users$).then(users => {
-        expect(users).toEqual(['lobby-2-user']);
+        expect(users).toEqual(plainLobby2_update.users);
     });
 });
 
