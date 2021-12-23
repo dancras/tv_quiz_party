@@ -87,7 +87,7 @@ test('classes are added to previous answers when revealAnswer timing passes', ()
     expect(screen.getByText('Incorrect Answer').classList).not.toContain('correct');
 });
 
-test('leaderboard updates are ignored until revealAnswer timing passes', () => {
+test('leaderboard position and score updates are ignored until revealAnswer timing passes', () => {
     const leaderboard = {
         'first-user': createLeaderboardItem({
             position: 111,
@@ -129,4 +129,31 @@ test('leaderboard updates are ignored until revealAnswer timing passes', () => {
     expect(screen.queryByText('222')).not.toBeInTheDocument();
     expect(screen.getByText('333')).toBeInTheDocument();
     expect(screen.getByText('444')).toBeInTheDocument();
+});
+
+
+test('previousAnswer updates are available when answering is locked', () => {
+    const leaderboard = {
+        'first-user': createLeaderboardItem({
+        })
+    };
+
+    const users = createUsersForLeaderboard(leaderboard);
+
+    const currentQuestion = mock<CurrentQuestion>();
+    currentQuestion.hasEndedOnServer$ = new BehaviorSubject(true);
+
+    useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(3));
+
+    const { rerender } = render(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboard} users={users} />);
+
+    const leaderboardUpdate = {
+        'first-user': createLeaderboardItem({
+            previousAnswer: 'foo'
+        })
+    };
+
+    rerender(<ExampleLeaderboardDisplay currentQuestion={currentQuestion} leaderboard={leaderboardUpdate} users={users} />);
+
+    expect(screen.getByText('foo')).toBeInTheDocument();
 });

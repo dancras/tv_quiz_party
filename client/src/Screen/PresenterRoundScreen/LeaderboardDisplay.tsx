@@ -32,10 +32,21 @@ function LeaderboardDisplay(
     }
 
     useEffect(() => {
+        if (timings.lockAnswers) {
+            setLeaderboardForDisplay(previous =>
+                Object.fromEntries(Object.entries(previous).map(
+                    ([userID, item]) => [userID, {
+                        ...item,
+                        previousAnswer: leaderboard[userID]?.previousAnswer
+                    }]
+                ))
+            );
+        }
+
         if (timings.revealAnswer) {
             setLeaderboardForDisplay(leaderboard);
         }
-    }, [timings.revealAnswer, leaderboard]);
+    }, [timings.lockAnswers, timings.revealAnswer, leaderboard]);
 
     return (
         <table className="leaderboard">
