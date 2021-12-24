@@ -1,4 +1,5 @@
 import React from 'react';
+import { Grid, Form, Divider, Container } from 'semantic-ui-react';
 import { CommandButtonProps } from '../Component/CommandButton';
 import { LobbyCmd } from '../Model/Lobby';
 
@@ -35,16 +36,30 @@ function WelcomeScreen(
     }
 
     return (
-        <div>
-            <div>
-                <CommandButton onClick={handleHostLobbyButton}>Host Lobby</CommandButton>
-            </div>
-            <div>
-                <label>Join Code <input type="text" onChange={handleJoinCodeChange} /></label>
-                <CommandButton onClick={handleJoinLobbyButton}>Join Lobby</CommandButton>
-                <CommandButton onClick={handlePresenterButton}>Presenter</CommandButton>
-            </div>
-        </div>
+        <Container>
+            <Grid textAlign='center' style={{ height: '100vh' }} verticalAlign='middle'>
+                <Grid.Column textAlign='left' style={{ maxWidth: 450 }}>
+                    <Form size="big">
+                        <Form.Field>
+                            <label>Join Code <input type="text" onChange={handleJoinCodeChange} placeholder="Enter Join Code" /></label>
+                        </Form.Field>
+                        <Form.Group widths='equal'>
+                            <Form.Field>
+                                <CommandButton fluid size='large' onClick={handleJoinLobbyButton}>Join Lobby</CommandButton>
+                            </Form.Field>
+                            <Form.Field>
+                                <CommandButton fluid size='large' onClick={handlePresenterButton}>Presenter</CommandButton>
+                            </Form.Field>
+                        </Form.Group>
+
+                        <Divider horizontal>Or</Divider>
+                        <Form.Field>
+                            <CommandButton fluid size='large' onClick={handleHostLobbyButton}>Host Lobby</CommandButton>
+                        </Form.Field>
+                    </Form>
+                </Grid.Column>
+            </Grid>
+        </Container>
     );
 }
 

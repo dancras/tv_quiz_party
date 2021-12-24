@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import Clipper from 'image-clipper';
+import { Button, Grid, Form, Image, Container, Icon } from 'semantic-ui-react';
 import { CommandButtonProps } from '../Component/CommandButton';
 import { ProfileCmd } from '../Model/Profile';
 
@@ -54,17 +55,37 @@ function ProfileScreen(
     }
 
     return (
-        <div>
-            { profileImg !== null ?
-                <div className="profile-img-preview"><img src={profileImg} alt="Preview"/></div> :
-                <></>
-            }
-            <div>
-                <label>Display Name<input ref={displayNameRef} type="text" /></label>
-                <label>Upload Photo<input type="file" accept="image/*" onChange={handleImageUpload} /></label>
-                <CommandButton onClick={handleUpdateProfile}>Update Profile</CommandButton>
-            </div>
-        </div>
+        <Container>
+            <Grid textAlign='center' style={{ height: '100vh' }} verticalAlign='middle'>
+                <Grid.Column textAlign='left' style={{ maxWidth: 450 }}>
+                    <Form size="big">
+                        { profileImg !== null ?
+                            <Image centered src={profileImg} circular size='tiny' /> :
+                            <></>
+                        }
+                        <Form.Field>
+                            <label>Display Name<input ref={displayNameRef} type="text" /></label>
+                        </Form.Field>
+                        <Form.Field>
+                            <label>
+                                Upload Photo
+                                <input hidden type="file" accept="image/*" onChange={handleImageUpload} />
+                                <Button
+                                    fluid size='large'
+                                    icon
+                                    labelPosition='right'
+                                    onClick={event => (event.currentTarget.previousSibling as any).click()}
+                                >
+                                    <Icon name='camera' />
+                                    Select Photo
+                                </Button>
+                            </label>
+                        </Form.Field>
+                        <CommandButton fluid size='large' onClick={handleUpdateProfile}>Update Profile</CommandButton>
+                    </Form>
+                </Grid.Column>
+            </Grid>
+        </Container>
     );
 }
 

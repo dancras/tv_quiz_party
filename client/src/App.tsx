@@ -1,10 +1,10 @@
 import React from 'react';
-import logo from './logo.svg';
 import './App.css';
 import Lobby from './Model/Lobby';
 import { CommandButtonProps } from './Component/CommandButton';
 import { Observable } from 'rxjs';
 import { useObservable } from './Lib/RxReact';
+import { Icon, Menu } from 'semantic-ui-react';
 
 function App(
     CommandButton: React.FunctionComponent<CommandButtonProps>,
@@ -19,18 +19,18 @@ function App(
 
     return (
         <div className="App">
-            <header className="App-header"><img src={logo} className="App-logo" alt="logo" /></header>
+            { lobby ?
+                <Menu attached='top'>
+                    <Menu.Item>
+                        <CommandButton icon onClick={handleExitLobbyButton}><Icon name="close" /></CommandButton>
+                    </Menu.Item>
+                </Menu> :
+                <></>
+            }
             <main className="App-main">
                 <ActiveScreen />
             </main>
-            <footer>
-                { lobby ?
-                    <div>
-                        <CommandButton onClick={handleExitLobbyButton}>Exit Lobby</CommandButton>
-                    </div> :
-                    <></>
-                }
-            </footer>
+
         </div>
     );
 }

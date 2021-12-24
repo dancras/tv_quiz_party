@@ -1,8 +1,9 @@
 import React from 'react';
 import { Observable } from 'rxjs';
+import { Button, ButtonProps } from 'semantic-ui-react';
 import { useObservable } from '../Lib/RxReact';
 
-export type CommandButtonProps = React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>;
+export type CommandButtonProps = React.PropsWithChildren<ButtonProps>;
 
 function CommandButton(
     areCommandsDisabled$: Observable<boolean>,
@@ -10,7 +11,7 @@ function CommandButton(
 ) {
     const areCommandsDisabled = useObservable(areCommandsDisabled$);
 
-    return <button disabled={areCommandsDisabled || disabled} {...props}>{children}</button>;
+    return <Button disabled={areCommandsDisabled || disabled} {...props}>{children}</Button>;
 }
 
 export default CommandButton;
