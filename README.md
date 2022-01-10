@@ -2,13 +2,35 @@
 
 Use clips from popular TV quiz shows to create a party game.
 
+Host a Quiz Party from your phone, and invite other players with the Join Code. Add a big screen as a Presenter for the quiz.
 
-## Development
+
+## Getting Started
+
+Install and run `Docker`
+Install `Remote - Containers` plugin for VS Code.
 
 `docker-compose up -d`
 
-Server is available at http://localhost:8080
+Backend server is running at http://localhost:8080
 
-`docker-compose run integration_tests`
+Open the `client` directory in VS Code with `code client`
 
-`docker-compose build integration_tests`
+Reopen `client` directory in container from within VS Code (bottom left)
+
+Use VS Code terminal to run the following
+
+`cd client`
+
+`yarn install`
+
+`yarn start`
+
+App is running at http://localhost:3000
+
+
+## Development
+
+[Client Development](client/README.md)
+
+[Server Development](server/README.md)

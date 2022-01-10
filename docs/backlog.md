@@ -1,0 +1,10 @@
+- Add basic layouts to the client
+- Add form to populate clips db
+- Investigate Quart hot reload crashes
+- Formalise client/server contract jsonschema
+    - https://www.npmjs.com/package/json-schema-to-typescript
+    - https://python-jsonschema.readthedocs.io/en/stable/#
+- Show the result of the most recent round in lobby
+- Add crowns and poop for recent winners/loser
+- Add support for non multiple choice questions
+- Add support for countdown questions
