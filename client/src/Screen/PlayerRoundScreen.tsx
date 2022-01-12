@@ -5,6 +5,7 @@ import { CommandButtonProps } from '../Component/CommandButton';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
 import CurrentQuestion from '../Model/CurrentQuestion';
 import Round from '../Model/Round';
+import { Container, Grid } from 'semantic-ui-react';
 
 export type PlayerRoundScreenProps = {
     round: Round
@@ -30,20 +31,24 @@ function PlayerRoundScreen(
     }
 
     return (
-        <div>
-            { currentQuestion ?
-                <>
-                    <Countdown key={key('Countdown')} endsAt={currentQuestion.timestampToStartVideo}></Countdown>
-                    <AnswerViewer key={key('AnswerViewer')} question={currentQuestion}></AnswerViewer>
-                </>:
-                <div>Waiting for host to start...</div>
+        <Container textAlign='center'>
+            <Grid style={{ height: '100vh' }} verticalAlign='middle'>
+                <Grid.Column>
+                    { currentQuestion ?
+                        <>
+                            <Countdown key={key('Countdown')} endsAt={currentQuestion.timestampToStartVideo}></Countdown>
+                            <AnswerViewer key={key('AnswerViewer')} question={currentQuestion}></AnswerViewer>
+                        </>:
+                        <p>Waiting for host to start...</p>
 
-            }
-            { canStartNextQuestion && (!timings || timings.hasEnded) ?
-                <CommandButton onClick={handleStartQuestionButton}>Start Question</CommandButton> :
-                <></>
-            }
-        </div>
+                    }
+                    { canStartNextQuestion && (!timings || timings.hasEnded) ?
+                        <CommandButton onClick={handleStartQuestionButton}>Start Question</CommandButton> :
+                        <></>
+                    }
+                </Grid.Column>
+            </Grid>
+        </Container>
     );
 }
 
