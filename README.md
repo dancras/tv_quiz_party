@@ -8,6 +8,7 @@ Host a Quiz Party from your phone, and invite other players with the Join Code. 
 ## Getting Started
 
 Install and run `Docker`
+
 Install `Remote - Containers` plugin for VS Code.
 
 `docker-compose up -d`
@@ -31,6 +32,6 @@ App is running at http://localhost:3000
 
 ## Development
 
-[Client Development](client/README.md)
+[Client Development](client/)
 
-[Server Development](server/README.md)
+[Server Development](server/)
