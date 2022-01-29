@@ -5,9 +5,8 @@ import { MockProxy, mock } from 'jest-mock-extended';
 
 import LobbyScreen, { LobbyScreenProps } from './LobbyScreen';
 import Lobby from '../Model/Lobby';
-import { CommandButtonProps } from '../Component/CommandButton';
+import { DummyCommandButton } from '../Component/CommandButton';
 
-let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let mockLobby: MockProxy<Lobby>;
 
 function ExampleLobbyScreen(props: LobbyScreenProps) {
@@ -15,7 +14,6 @@ function ExampleLobbyScreen(props: LobbyScreenProps) {
 }
 
 beforeEach(() => {
-    DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     mockLobby = mock<Lobby>();
     mockLobby.joinCode = 'join-code';
     mockLobby.users$ = new BehaviorSubject({});
@@ -56,7 +54,7 @@ test('start button calls start round function when clicked', () => {
 
     const buttonElement = screen.getByText(/Start Round/i);
     userEvent.click(buttonElement);
-    expect(buttonElement).toHaveAttribute('data-x');
+    expect(buttonElement).toHaveAttribute('data-command-button');
 
     expect(mockLobby.startRound).toBeCalled();
 });

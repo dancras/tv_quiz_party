@@ -6,11 +6,9 @@ import { mock, MockProxy } from 'jest-mock-extended';
 
 import App from './App';
 import Lobby from './Model/Lobby';
-import { CommandButtonProps } from './Component/CommandButton';
+import { DummyCommandButton } from './Component/CommandButton';
 import { BehaviorSubject } from 'rxjs';
 
-
-let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let activeLobby$: BehaviorSubject<Lobby | null>;
 let DummyActiveScreen: React.FunctionComponent;
 
@@ -23,7 +21,6 @@ function ExampleApp() {
 }
 
 beforeEach(() => {
-    DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     activeLobby$ = new BehaviorSubject<Lobby | null>(null);
     DummyActiveScreen = () => <div>Screen</div>;
 });
@@ -40,9 +37,9 @@ test('exit lobby button shown when there is an active lobby', () => {
 
     render(<ExampleApp />);
 
-    const buttonElement = screen.getByText(/Exit Lobby/i);
+    const buttonElement = screen.getByTestId('app-button-exit-lobby');
     userEvent.click(buttonElement);
-    expect(buttonElement).toHaveAttribute('data-x');
+    expect(buttonElement).toHaveAttribute('data-command-button');
 
     expect(mockLobby.exit).toBeCalled();
 });

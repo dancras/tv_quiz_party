@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { mock, MockProxy } from 'jest-mock-extended';
 import { of } from 'rxjs';
-import { CommandButtonProps } from '../Component/CommandButton';
+import { DummyCommandButton } from '../Component/CommandButton';
 import { CountdownProps } from '../Component/Countdown';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
 import { mockHook } from '../Lib/Test';
@@ -12,16 +12,15 @@ import { createTimings } from '../Model/QuestionTimer.test';
 import Round from '../Model/Round';
 import { AnswerViewerProps } from './AnswerViewer';
 import PlayerRoundScreen from './PlayerRoundScreen';
-import { RoundScreenProps } from './PresenterRoundScreen';
+import { PlayerRoundScreenProps } from './PlayerRoundScreen';
 
-let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let MockAnswerViewer: jest.MockedFunction<React.FunctionComponent<AnswerViewerProps>>;
 let MockCountdown: jest.MockedFunction<React.FunctionComponent<CountdownProps>>;
 let useQuestionTimings: jest.MockedFunction<QuestionTimingsHook<CurrentQuestion | undefined>>;
 let mockRound: MockProxy<Round>;
 
 function ExamplePlayerRoundScreen(
-    props : RoundScreenProps
+    props : PlayerRoundScreenProps
 ) {
     return PlayerRoundScreen(
         DummyCommandButton,
@@ -33,7 +32,6 @@ function ExamplePlayerRoundScreen(
 }
 
 beforeEach(() => {
-    DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     MockAnswerViewer = jest.fn();
     MockAnswerViewer.mockReturnValue(<div>AnswerViewer</div>);
     MockCountdown = jest.fn();
@@ -60,7 +58,7 @@ test('start question button calls start question function', () => {
 
     const buttonElement = screen.getByText(/Start Question/i);
     userEvent.click(buttonElement);
-    expect(buttonElement).toHaveAttribute('data-x');
+    expect(buttonElement).toHaveAttribute('data-command-button');
 
     expect(mockRound.startNextQuestion).toBeCalled();
 });

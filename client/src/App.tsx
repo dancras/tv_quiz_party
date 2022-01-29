@@ -22,7 +22,7 @@ function App(
             { lobby ?
                 <Menu attached='top'>
                     <Menu.Item>
-                        <CommandButton icon onClick={handleExitLobbyButton}><Icon name="close" /></CommandButton>
+                        <CommandButton icon onClick={handleExitLobbyButton} data-testid="app-button-exit-lobby"><Icon name="close" /></CommandButton>
                     </Menu.Item>
                 </Menu> :
                 <></>

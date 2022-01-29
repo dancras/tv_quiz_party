@@ -7,15 +7,16 @@ import ActiveScreen from './ActiveScreen';
 import Lobby from '../Model/Lobby';
 import Round from '../Model/Round';
 import { LobbyScreenProps } from './LobbyScreen';
-import { RoundScreenProps } from './PresenterRoundScreen';
+import { PresenterRoundScreenProps } from './PresenterRoundScreen';
+import { PlayerRoundScreenProps } from './PlayerRoundScreen';
 import { BehaviorSubject } from 'rxjs';
 
 let activeLobby$: BehaviorSubject<Lobby | null>;
 let isCommandPending$: BehaviorSubject<boolean>;
 let DummyWelcomeScreen: React.FunctionComponent;
 let DummyLobbyScreen: React.FunctionComponent<LobbyScreenProps>;
-let DummyPresenterRoundScreen: React.FunctionComponent<RoundScreenProps>;
-let DummyPlayerRoundScreen: React.FunctionComponent<RoundScreenProps>;
+let DummyPresenterRoundScreen: React.FunctionComponent<PresenterRoundScreenProps>;
+let DummyPlayerRoundScreen: React.FunctionComponent<PlayerRoundScreenProps>;
 let DummyProfileScreen: React.FunctionComponent;
 
 function ExampleActiveScreen() {

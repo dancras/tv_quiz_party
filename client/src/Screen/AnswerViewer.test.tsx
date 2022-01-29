@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { mock } from 'jest-mock-extended';
 import { act } from 'react-dom/test-utils';
 import { of } from 'rxjs';
-import { CommandButtonProps } from '../Component/CommandButton';
+import { DummyCommandButton } from '../Component/CommandButton';
 import { QuestionTimingsHook } from '../Hook/QuestionTimingsHook';
 import { mockHook } from '../Lib/Test';
 import CurrentQuestion from '../Model/CurrentQuestion';
@@ -11,7 +11,6 @@ import { createCurrentQuestion } from '../Model/CurrentQuestion.test';
 import { createTimings } from '../Model/QuestionTimer.test';
 import AnswerViewer, { AnswerViewerProps } from './AnswerViewer';
 
-let DummyCommandButton: React.FunctionComponent<CommandButtonProps>;
 let useQuestionTimings: jest.MockedFunction<QuestionTimingsHook<CurrentQuestion>>;
 
 function ExampleAnswerViewer(props: AnswerViewerProps) {
@@ -19,7 +18,6 @@ function ExampleAnswerViewer(props: AnswerViewerProps) {
 }
 
 beforeEach(() => {
-    DummyCommandButton = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     useQuestionTimings = mockHook<QuestionTimingsHook<CurrentQuestion>>(createTimings(0));
 });
 
@@ -51,9 +49,9 @@ test('it displays answers at questionDisplayTime', () => {
         useQuestionTimings.mockReturnValue(createTimings(2));
     });
 
-    expect(screen.getByText('Answer 1')).toHaveAttribute('data-x');
-    expect(screen.getByText('Answer 2')).toHaveAttribute('data-x');
-    expect(screen.getByText('Answer 3')).toHaveAttribute('data-x');
+    expect(screen.getByText('Answer 1')).toHaveAttribute('data-command-button');
+    expect(screen.getByText('Answer 2')).toHaveAttribute('data-command-button');
+    expect(screen.getByText('Answer 3')).toHaveAttribute('data-command-button');
 });
 
 test('it indicates selected answer', () => {

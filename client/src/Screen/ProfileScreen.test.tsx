@@ -1,12 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import fs from 'fs';
-import { CommandButtonProps } from '../Component/CommandButton';
+import { DummyCommandButton } from '../Component/CommandButton';
 
 import ProfileScreen from './ProfileScreen';
 
 test('it sends a command with profile img and name data', async () => {
-    const DummyCommandButton: React.FunctionComponent<CommandButtonProps> = ({ children, ...props }) => <button data-x {...props}>{children}</button>;
     const mockProcessImage = jest.fn();
     const mockSendCmd = jest.fn();
 
